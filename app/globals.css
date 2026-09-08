@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+:root {
+  /* AgenCFO brand */
+  --blue:        #1390eb;
+  --blue-soft:   rgba(19, 144, 235, 0.18);
+  --green:       #22c55e;
+  --green-soft:  rgba(34, 197, 94, 0.18);
+  --red:         #ef4444;
+  --red-soft:    rgba(239, 68, 68, 0.18);
+  --amber:       #f59e0b;
+  --purple:      #c084fc;
+  --yellow:      #fde047;
+
+  /* Text */
+  --text:        #ffffff;
+  --muted:       rgba(255, 255, 255, 0.55);
+
+  /* Cards / panels */
+  --card:         rgba(255, 255, 255, 0.04);
+  --card-strong:  rgba(255, 255, 255, 0.07);
+  --card-border:  rgba(255, 255, 255, 0.08);
+
+  /* Opaque navy for sticky table cells */
+  --sticky-cell:        rgb(15, 36, 60);
+  --sticky-cell-strong: rgb(22, 47, 75);
+
+  /* shadcn/ui aliases */
+  --background:           #000000;
+  --foreground:           #ffffff;
+  --card-foreground:      #ffffff;
+  --popover:              #0b1f33;
+  --popover-foreground:   #ffffff;
+  --primary:              var(--blue);
+  --primary-foreground:   #ffffff;
+  --secondary:            rgba(255, 255, 255, 0.06);
+  --secondary-foreground: #ffffff;
+  --muted-color:          rgba(255, 255, 255, 0.06);
+  --muted-foreground:     rgba(255, 255, 255, 0.55);
+  --accent:               rgba(255, 255, 255, 0.06);
+  --accent-foreground:    #ffffff;
+  --destructive:          var(--red);
+  --destructive-foreground: #ffffff;
+  --border:               rgba(255, 255, 255, 0.08);
+  --input:                rgba(255, 255, 255, 0.08);
+  --ring:                 var(--blue);
+  --radius:               0.75rem;
+
+  /* Semantic deltas */
+  --success:     var(--green);
+  --success-bg:  var(--green-soft);
+  --warning:     var(--amber);
+  --warning-bg:  rgba(245, 158, 11, 0.15);
+  --danger:      var(--red);
+  --danger-bg:   var(--red-soft);
+  --info:        var(--blue);
+  --info-bg:     var(--blue-soft);
+}
+
+@theme inline {
+  --color-background:         var(--background);
+  --color-foreground:         var(--foreground);
+  --color-card:               var(--card);
+  --color-card-foreground:    var(--card-foreground);
+  --color-popover:            var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary:            var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary:          var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted:              var(--muted-color);
+  --color-muted-foreground:   var(--muted-foreground);
+  --color-accent:             var(--accent);
+  --color-accent-foreground:  var(--accent-foreground);
+  --color-destructive:        var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border:             var(--border);
+  --color-input:              var(--input);
+  --color-ring:               var(--ring);
+
+  --color-success:     var(--success);
+  --color-success-bg:  var(--success-bg);
+  --color-warning:     var(--warning);
+  --color-warning-bg:  var(--warning-bg);
+  --color-danger:      var(--danger);
+  --color-danger-bg:   var(--danger-bg);
+  --color-info:        var(--info);
+  --color-info-bg:     var(--info-bg);
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-display: "Anton", sans-serif;
+  --font-body:    "DM Sans", system-ui, sans-serif;
+}
+
+.sticky-bg        { background-color: rgb(15, 36, 60) !important; }
+.sticky-bg-strong { background-color: rgb(22, 47, 75) !important; }
+
+body {
+  background: linear-gradient(180deg, #000000 0%, #001a2e 50%, #003b6f 100%);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+.tabular-nums,
+table {
+  font-variant-numeric: tabular-nums;
+}
+
+.font-display,
+.anton {
+  font-family: "Anton", sans-serif;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+::-webkit-scrollbar               { width: 10px; height: 10px; }
+::-webkit-scrollbar-track         { background: transparent; }
+::-webkit-scrollbar-thumb         { background: rgba(255, 255, 255, 0.12); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover   { background: rgba(255, 255, 255, 0.22); }
+
+/* Nav wordmark — see formatting.md §1.5 */
+.agencfo-logo {
+  font-family: "Anton", sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.agencfo-logo .x   { color: rgba(255, 255, 255, 0.4); margin: 0 8px; }
+.agencfo-logo .cfo { color: var(--blue); }
