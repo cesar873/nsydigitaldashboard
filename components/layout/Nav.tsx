@@ -23,12 +23,17 @@ export function Nav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  // No nav on the login screen — every link behind it is gated anyway.
+  const hidden = pathname === "/login";
+
   const carried = new URLSearchParams();
   for (const key of PRESERVED) {
     const v = searchParams.get(key);
     if (v) carried.set(key, v);
   }
   const qs = carried.toString();
+
+  if (hidden) return null;
 
   return (
     <div className="border-b border-[var(--card-border)] bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
