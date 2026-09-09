@@ -1,9 +1,9 @@
 /** Per-client template config. Swap these when cloning the template. */
 export const CLIENT_CONFIG = {
   /** Left half of the nav wordmark. */
-  clientName: "AGENCY",
+  clientName: "NSY DIGITAL",
   /** Shown in the "Live from <sheetName>" footer. */
-  sheetName: "TEMPLATE v4.2",
+  sheetName: "NSY Digital v4.2",
   sheetId: process.env.GOOGLE_SHEET_ID ?? "",
   get sheetUrl() {
     return `https://docs.google.com/spreadsheets/d/${this.sheetId}/edit`;
