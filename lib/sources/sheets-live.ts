@@ -21,17 +21,52 @@ const cache: Map<string, CacheEntry> = (globalCache.__sheetCache ??= new Map());
 
 let clientPromise: Promise<JWT> | null = null;
 
-function getClient(): Promise<JWT> {
-  if (!clientPromise) {
-    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    const rawKey = process.env.GOOGLE_PRIVATE_KEY;
-    if (!email || !rawKey) {
+/**
+ * Resolves the service-account email + private key from the environment.
+ *
+ * Preferred: GOOGLE_CREDENTIALS holds the *entire* service-account JSON (paste
+ * the file straight from Google Cloud). Falls back to the split
+ * GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_PRIVATE_KEY pair so older deployments
+ * keep working. Either way the private key's literal `\n` sequences — how
+ * Vercel and .env files store newlines — are turned back into real newlines.
+ */
+function loadServiceAccount(): { email: string; key: string } {
+  const json = process.env.GOOGLE_CREDENTIALS;
+  if (json && json.trim()) {
+    let creds: { client_email?: string; private_key?: string };
+    try {
+      creds = JSON.parse(json);
+    } catch {
       throw new Error(
-        "Missing GOOGLE_SERVICE_ACCOUNT_EMAIL or GOOGLE_PRIVATE_KEY. Copy .env.local.example to .env.local and fill it in.",
+        "GOOGLE_CREDENTIALS is set but is not valid JSON. Paste the entire " +
+          "service-account JSON (the whole file) as the value.",
       );
     }
-    // Vercel and .env files store the key with literal \n sequences.
-    const key = rawKey.replace(/\\n/g, "\n");
+    const email = creds.client_email;
+    const key = creds.private_key;
+    if (!email || !key) {
+      throw new Error(
+        "GOOGLE_CREDENTIALS JSON is missing client_email or private_key.",
+      );
+    }
+    return { email, key: key.replace(/\\n/g, "\n") };
+  }
+
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const rawKey = process.env.GOOGLE_PRIVATE_KEY;
+  if (!email || !rawKey) {
+    throw new Error(
+      "Missing Google credentials. Set GOOGLE_CREDENTIALS to the full " +
+        "service-account JSON, or set GOOGLE_SERVICE_ACCOUNT_EMAIL and " +
+        "GOOGLE_PRIVATE_KEY. Copy .env.local.example to .env.local and fill it in.",
+    );
+  }
+  return { email, key: rawKey.replace(/\\n/g, "\n") };
+}
+
+function getClient(): Promise<JWT> {
+  if (!clientPromise) {
+    const { email, key } = loadServiceAccount();
     const jwt = new JWT({ email, key, scopes: SCOPES });
     clientPromise = jwt.authorize().then(() => jwt);
   }
