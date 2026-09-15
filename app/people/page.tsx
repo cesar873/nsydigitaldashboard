@@ -10,6 +10,7 @@ import { formatMonthShort } from "@/lib/months";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import { getTeamProfit, type TeamProfitRow } from "@/lib/sources/team-profit";
 import type { SearchParams } from "@/lib/default-range";
+import { currencyFrom, GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export const revalidate = 300;
 export const metadata = { title: "People · Finance Dashboard" };
@@ -19,7 +20,7 @@ function billable(rows: TeamProfitRow[]) {
   return rows.filter((r) => r.utilizationTarget !== null && r.utilizationTarget > 0);
 }
 
-function buildInsights(rows: TeamProfitRow[]): Insight[] {
+function buildInsights(rows: TeamProfitRow[], currency: CurrencyView = GBP_VIEW): Insight[] {
   const out: Insight[] = [];
   const withTarget = billable(rows).filter((r) => r.utilizationActual !== null);
 
@@ -34,8 +35,8 @@ function buildInsights(rows: TeamProfitRow[]): Insight[] {
       tone: "alert",
       prose:
         under.length === 1
-          ? `<b>${under[0].r.name}</b> is <b>${Math.abs(under[0].pp).toFixed(0)} pp</b> below target — about ${formatCurrency(Math.max(0, under[0].r.revenueGap), { compact: true })} of capacity unused.`
-          : `<b>${under.length} team members</b> sit 30+ pp below target (<b>${formatCurrency(unrealised, { compact: true })}</b> unrealised). Worst: <b>${under[0].r.name}</b> at ${under[0].pp.toFixed(0)} pp.`,
+          ? `<b>${under[0].r.name}</b> is <b>${Math.abs(under[0].pp).toFixed(0)} pp</b> below target — about ${formatCurrency(Math.max(0, under[0].r.revenueGap), { compact: true, currency })} of capacity unused.`
+          : `<b>${under.length} team members</b> sit 30+ pp below target (<b>${formatCurrency(unrealised, { compact: true, currency })}</b> unrealised). Worst: <b>${under[0].r.name}</b> at ${under[0].pp.toFixed(0)} pp.`,
     });
   }
 
@@ -54,7 +55,7 @@ function buildInsights(rows: TeamProfitRow[]): Insight[] {
   if (best && best.profit > 0) {
     out.push({
       tone: "win",
-      prose: `<b>${best.name}</b>${best.department ? ` (${best.department})` : ""} covered <b>${formatCurrency(best.revenueCovered, { compact: true })}</b>, returning ${formatCurrency(best.profit, { compact: true })} over cost.`,
+      prose: `<b>${best.name}</b>${best.department ? ` (${best.department})` : ""} covered <b>${formatCurrency(best.revenueCovered, { compact: true, currency })}</b>, returning ${formatCurrency(best.profit, { compact: true, currency })} over cost.`,
     });
   }
 
@@ -63,7 +64,7 @@ function buildInsights(rows: TeamProfitRow[]): Insight[] {
     const total = loss.reduce((a, r) => a + r.profit, 0);
     out.push({
       tone: "info",
-      prose: `<b>${loss.length}</b> ${loss.length === 1 ? "person costs" : "people cost"} more than they cover (<b>${formatCurrency(Math.abs(total), { compact: true })}</b>). Expected for non-billable roles — worth checking the split is deliberate.`,
+      prose: `<b>${loss.length}</b> ${loss.length === 1 ? "person costs" : "people cost"} more than they cover (<b>${formatCurrency(Math.abs(total), { compact: true, currency })}</b>). Expected for non-billable roles — worth checking the split is deliberate.`,
     });
   }
 
@@ -75,7 +76,8 @@ export default async function PeoplePage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await searchParams;
+  const sp = await searchParams;
+  const currency = currencyFrom(sp);
 
   let rows: TeamProfitRow[];
   try {
@@ -150,10 +152,10 @@ export default async function PeoplePage({
         source="Team Profit"
       />
 
-      <WhatToDoNext periodLabel={periodLabel} insights={buildInsights(rows)} />
+      <WhatToDoNext periodLabel={periodLabel} insights={buildInsights(rows, currency)} />
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <KpiStat label="Revenue Covered" value={formatCurrency(revenueCovered, { compact: true })} />
+        <KpiStat label="Revenue Covered" value={formatCurrency(revenueCovered, { compact: true, currency })} />
         <KpiStat
           label="Avg Utilization"
           value={avgUtilization === null ? "—" : formatPercent(avgUtilization)}
@@ -167,7 +169,7 @@ export default async function PeoplePage({
         />
         <KpiStat
           label="Revenue Gap"
-          value={formatCurrency(revenueGap, { compact: true })}
+          value={formatCurrency(revenueGap, { compact: true, currency })}
           tone={revenueGap === 0 ? "success" : "danger"}
           deltaLabel="under-target capacity"
         />
@@ -202,7 +204,7 @@ export default async function PeoplePage({
             One row per person · default sort by revenue covered
           </span>
         </div>
-        <PeopleProfitTable rows={rows} />
+        <PeopleProfitTable rows={rows} currency={currency} />
       </section>
 
       <LiveFooter sources="Team Profit" />

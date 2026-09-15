@@ -13,6 +13,7 @@ import { PageHero } from "@/components/layout/PageHero";
 import { WhatToDoNext } from "@/components/ui/WhatToDoNext";
 import { SheetError } from "@/components/ui/SheetError";
 import { resolveRange, type SearchParams } from "@/lib/default-range";
+import { currencyFrom } from "@/lib/currency";
 import { formatMonthShort, periodLabel } from "@/lib/months";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import {
@@ -49,6 +50,7 @@ export default async function FinancialsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
+  const currency = currencyFrom(sp);
 
   let summary: IncomeSummary;
   let lastActual: string | null;
@@ -310,26 +312,26 @@ export default async function FinancialsPage({
 
         <WhatToDoNext
           periodLabel={range.periodLabel}
-          insights={generateWhatToDoNextFinancials(cur, prior, priorLabel)}
+          insights={generateWhatToDoNextFinancials(cur, prior, priorLabel, currency)}
         />
 
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <KpiStat
             label="Revenue"
-            value={formatCurrency(cur.revenue, { compact: true })}
+            value={formatCurrency(cur.revenue, { compact: true, currency })}
             delta={delta(cur.revenue, prior?.revenue)}
             deltaLabel={deltaLabel}
           />
           <KpiStat
             label="Gross Profit"
-            value={formatCurrency(cur.grossProfit, { compact: true })}
+            value={formatCurrency(cur.grossProfit, { compact: true, currency })}
             tone={cur.grossProfit < 0 ? "danger" : cur.grossProfit > 0 ? "success" : "neutral"}
             delta={delta(cur.grossProfit, prior?.grossProfit)}
             deltaLabel={deltaLabel}
           />
           <KpiStat
             label="Operating Profit"
-            value={formatCurrency(cur.operatingProfit, { compact: true })}
+            value={formatCurrency(cur.operatingProfit, { compact: true, currency })}
             tone={
               cur.operatingProfit < 0 ? "danger" : cur.operatingProfit > 0 ? "success" : "neutral"
             }
@@ -371,6 +373,7 @@ export default async function FinancialsPage({
               <MultiLineChart
                 data={trend}
                 leftFormat="currency"
+                currency={currency}
                 firstForecastIndex={range.firstForecastIndex}
                 series={[
                   {
@@ -430,7 +433,7 @@ export default async function FinancialsPage({
             {cashBars.every((b) => b.value === 0) ? (
               <EmptyChart height={260} message="No cash balances in the selected range." />
             ) : (
-              <SingleBarChart data={cashBars} color="#22c55e" name="Ending cash" height={260} />
+              <SingleBarChart data={cashBars} color="#22c55e" name="Ending cash" height={260} currency={currency} />
             )}
           </CardShell>
 
@@ -445,7 +448,7 @@ export default async function FinancialsPage({
                 message="Accounts Receivable is empty in the Finance Model."
               />
             ) : (
-              <SingleBarChart data={receivableBars} color="#c084fc" name="Receivables" height={260} />
+              <SingleBarChart data={receivableBars} color="#c084fc" name="Receivables" height={260} currency={currency} />
             )}
           </CardShell>
 
@@ -460,7 +463,7 @@ export default async function FinancialsPage({
                 message="Credit Card Payable is empty in the Finance Model."
               />
             ) : (
-              <SingleBarChart data={creditCardBars} color="#f59e0b" name="Credit card" height={260} />
+              <SingleBarChart data={creditCardBars} color="#f59e0b" name="Credit card" height={260} currency={currency} />
             )}
           </CardShell>
 
@@ -472,7 +475,7 @@ export default async function FinancialsPage({
             {ownerBars.every((b) => b.value === 0) ? (
               <EmptyChart height={260} message="No owner pay in the selected range." />
             ) : (
-              <SingleBarChart data={ownerBars} color="#1390eb" name="Owner pay" height={260} />
+              <SingleBarChart data={ownerBars} color="#1390eb" name="Owner pay" height={260} currency={currency} />
             )}
           </CardShell>
         </section>
@@ -497,14 +500,14 @@ export default async function FinancialsPage({
               }}
             >
               {yearCards.map((y) => (
-                <YearComparisonCard key={y.year} data={y} />
+                <YearComparisonCard key={y.year} data={y} currency={currency} />
               ))}
             </div>
           )}
 
           {yearCards.length > 0 && (
             <div className="mt-3 rounded-2xl border border-border/40 bg-card/30 p-5 backdrop-blur-sm">
-              <YearOverYearChart metrics={yoyMetrics} years={comparisonYears} />
+              <YearOverYearChart metrics={yoyMetrics} years={comparisonYears} currency={currency} />
             </div>
           )}
         </section>
@@ -516,7 +519,7 @@ export default async function FinancialsPage({
               Every ledger line · filter by type, category, contact or account
             </span>
           </div>
-          <TransactionTable rows={txRows} />
+          <TransactionTable rows={txRows} currency={currency} />
         </section>
 
         <LiveFooter sources="Finance Model + Transactions" />

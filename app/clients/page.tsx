@@ -11,6 +11,7 @@ import { formatMonthShort } from "@/lib/months";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { getClientProfit, type ClientProfitRow } from "@/lib/sources/client-profit";
 import type { SearchParams } from "@/lib/default-range";
+import { currencyFrom, GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export const revalidate = 300;
 export const metadata = { title: "Clients · Finance Dashboard" };
@@ -34,7 +35,7 @@ function groupMargins(rows: ClientProfitRow[], key: "service" | "intensity") {
     .sort((a, b) => b.value - a.value);
 }
 
-function buildInsights(rows: ClientProfitRow[]): Insight[] {
+function buildInsights(rows: ClientProfitRow[], currency: CurrencyView = GBP_VIEW): Insight[] {
   const out: Insight[] = [];
   if (rows.length === 0) return out;
 
@@ -43,13 +44,13 @@ function buildInsights(rows: ClientProfitRow[]): Insight[] {
     const w = unprofitable[0];
     out.push({
       tone: "alert",
-      prose: `<b>${w.client}</b> (${w.service}) loses <b>${formatCurrency(Math.abs(w.profit), { compact: true })}</b> on ${formatCurrency(w.revenue, { compact: true })} of revenue. Reprice it or let it go.`,
+      prose: `<b>${w.client}</b> (${w.service}) loses <b>${formatCurrency(Math.abs(w.profit), { compact: true, currency })}</b> on ${formatCurrency(w.revenue, { compact: true, currency })} of revenue. Reprice it or let it go.`,
     });
   } else if (unprofitable.length > 1) {
     const total = unprofitable.reduce((a, r) => a + r.profit, 0);
     out.push({
       tone: "alert",
-      prose: `<b>${unprofitable.length} engagements</b> are loss-making, costing <b>${formatCurrency(Math.abs(total), { compact: true })}</b> between them — worst is <b>${unprofitable[0].client}</b>.`,
+      prose: `<b>${unprofitable.length} engagements</b> are loss-making, costing <b>${formatCurrency(Math.abs(total), { compact: true, currency })}</b> between them — worst is <b>${unprofitable[0].client}</b>.`,
     });
   }
 
@@ -57,7 +58,7 @@ function buildInsights(rows: ClientProfitRow[]): Insight[] {
   if (best && best.profit > 0) {
     out.push({
       tone: "win",
-      prose: `<b>${best.client}</b> (${best.service}) books <b>${formatCurrency(best.profit, { compact: true })}</b> profit on ${formatCurrency(best.revenue, { compact: true })} revenue (<b>${formatPercent(best.margin ?? 0, 0)}</b> margin). Pattern-match this for new pitches.`,
+      prose: `<b>${best.client}</b> (${best.service}) books <b>${formatCurrency(best.profit, { compact: true, currency })}</b> profit on ${formatCurrency(best.revenue, { compact: true, currency })} revenue (<b>${formatPercent(best.margin ?? 0, 0)}</b> margin). Pattern-match this for new pitches.`,
     });
   }
 
@@ -87,7 +88,8 @@ export default async function ClientsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await searchParams;
+  const sp = await searchParams;
+  const currency = currencyFrom(sp);
 
   let rows: ClientProfitRow[];
   try {
@@ -134,12 +136,12 @@ export default async function ClientsPage({
         source="Client Profit"
       />
 
-      <WhatToDoNext periodLabel={periodLabel} insights={buildInsights(rows)} />
+      <WhatToDoNext periodLabel={periodLabel} insights={buildInsights(rows, currency)} />
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <KpiStat
           label="Client Profit"
-          value={formatCurrency(totalProfit, { compact: true })}
+          value={formatCurrency(totalProfit, { compact: true, currency })}
           tone={totalProfit > 0 ? "success" : "danger"}
         />
         <KpiStat
@@ -199,7 +201,7 @@ export default async function ClientsPage({
             One row per client × service · default sort by profit desc
           </span>
         </div>
-        <ClientProfitTable rows={rows} />
+        <ClientProfitTable rows={rows} currency={currency} />
       </section>
 
       <LiveFooter sources="Client Profit" />

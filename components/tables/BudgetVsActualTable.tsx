@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Fragment, useMemo, useState } from "react";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type BvaCell = {
   budget: number;
@@ -54,10 +55,12 @@ export function BudgetVsActualTable({
   rows,
   months,
   monthLabels,
+  currency = GBP_VIEW,
 }: {
   rows: BvaRow[];
   months: string[];
   monthLabels: string[];
+  currency?: CurrencyView;
 }) {
   const [view, setView] = useState<ViewMode>("budget");
   const [grain, setGrain] = useState<Grain>("month");
@@ -138,7 +141,7 @@ export function BudgetVsActualTable({
   }
 
   const fmt = (v: number, kind: BvaKind) =>
-    kind === "margin" ? formatPercent(v, 1) : formatCurrency(v, { compact: true });
+    kind === "margin" ? formatPercent(v, 1) : formatCurrency(v, { compact: true, currency });
 
   function ValueCells({
     cell,
@@ -296,7 +299,7 @@ export function BudgetVsActualTable({
             ? "—"
             : isMargin
               ? `${diff > 0 ? "+" : ""}${(diff * 100).toFixed(1)}pp`
-              : `${diff > 0 ? "+" : "-"}${formatCurrency(Math.abs(diff), { compact: true })}`}
+              : `${diff > 0 ? "+" : "-"}${formatCurrency(Math.abs(diff), { compact: true, currency })}`}
         </td>
       </>
     );

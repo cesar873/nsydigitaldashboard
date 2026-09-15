@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { MultiSelectFilter, matchesFilter } from "@/components/ui/MultiSelectFilter";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type TxRow = {
   date: string;
@@ -24,7 +25,13 @@ type SortKey = "date" | "contact" | "amount";
  * Every ledger line in one place. Filters cover the four things people actually
  * search by: type, category, contact and account.
  */
-export function TransactionTable({ rows }: { rows: TxRow[] }) {
+export function TransactionTable({
+  rows,
+  currency = GBP_VIEW,
+}: {
+  rows: TxRow[];
+  currency?: CurrencyView;
+}) {
   const [query, setQuery] = useState("");
   const [types, setTypes] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -134,7 +141,7 @@ export function TransactionTable({ rows }: { rows: TxRow[] }) {
           <MultiSelectFilter eyebrow="Account" width="w-52" options={opts.accounts} selected={accounts} onChange={setAccounts} />
         )}
         <span className="ml-auto text-[11px] text-muted-foreground">
-          {sorted.length} of {rows.length} · net {formatCurrency(total, { compact: true })}
+          {sorted.length} of {rows.length} · net {formatCurrency(total, { compact: true, currency })}
           {sorted.length > shown.length && ` · showing first ${shown.length}`}
         </span>
       </div>
@@ -203,7 +210,7 @@ export function TransactionTable({ rows }: { rows: TxRow[] }) {
                       r.amount < 0 && "text-emerald-300",
                     )}
                   >
-                    {formatCurrency(r.amount, { compact: true })}
+                    {formatCurrency(r.amount, { compact: true, currency })}
                   </td>
                 </tr>
               ))

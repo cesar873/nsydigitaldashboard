@@ -1,5 +1,6 @@
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type YearStat = {
   label: string;
@@ -18,16 +19,22 @@ export type YearComparison = {
   stats: YearStat[];
 };
 
-function fmt(v: number | null, f: YearStat["format"]) {
+function fmt(v: number | null, f: YearStat["format"], currency: CurrencyView) {
   if (v === null) return "—";
-  return f === "currency" ? formatCurrency(v, { compact: true }) : formatPercent(v);
+  return f === "currency" ? formatCurrency(v, { compact: true, currency }) : formatPercent(v);
 }
 
 /**
  * One year per card, two value columns: the same year-to-date window as the
  * current year (so the comparison is like-for-like) and the full year.
  */
-export function YearComparisonCard({ data }: { data: YearComparison }) {
+export function YearComparisonCard({
+  data,
+  currency = GBP_VIEW,
+}: {
+  data: YearComparison;
+  currency?: CurrencyView;
+}) {
   return (
     <div
       className={cn(
@@ -59,7 +66,7 @@ export function YearComparisonCard({ data }: { data: YearComparison }) {
           <div key={stat.label} className="col-span-3 grid grid-cols-subgrid items-baseline border-t border-border/30 py-1.5">
             <span className="text-[12px] text-muted-foreground">{stat.label}</span>
             <span className="text-right text-[13px] font-semibold tabular-nums">
-              {fmt(stat.ytd, stat.format)}
+              {fmt(stat.ytd, stat.format, currency)}
             </span>
             <span
               className={cn(
@@ -67,7 +74,7 @@ export function YearComparisonCard({ data }: { data: YearComparison }) {
                 data.isCurrent ? "text-sky-200" : "text-foreground/80",
               )}
             >
-              {fmt(stat.fy, stat.format)}
+              {fmt(stat.fy, stat.format, currency)}
             </span>
           </div>
         ))}

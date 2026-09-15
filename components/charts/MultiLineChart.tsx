@@ -10,6 +10,7 @@ import {
   type ValueKind,
 } from "./chart-shared";
 import { forecastMarkers } from "./ForecastMarkers";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type LineSeries = {
   key: string;
@@ -28,6 +29,7 @@ export function MultiLineChart({
   leftFormat = "currency",
   rightFormat = "number",
   firstForecastIndex = -1,
+  currency = GBP_VIEW,
 }: {
   data: Record<string, string | number>[];
   series: LineSeries[];
@@ -35,6 +37,7 @@ export function MultiLineChart({
   leftFormat?: ValueKind;
   rightFormat?: ValueKind;
   firstForecastIndex?: number;
+  currency?: CurrencyView;
 }) {
   const hasRight = series.some((s) => s.axis === "right");
   const labels = data.map((d) => String(d.label));
@@ -60,7 +63,7 @@ export function MultiLineChart({
           tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={tickFormatterFor(leftFormat)}
+          tickFormatter={tickFormatterFor(leftFormat, currency)}
         />
         {hasRight && (
           <YAxis
@@ -70,7 +73,7 @@ export function MultiLineChart({
             tick={{ fontSize: 10, fill: "currentColor" }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={tickFormatterFor(rightFormat)}
+            tickFormatter={tickFormatterFor(rightFormat, currency)}
           />
         )}
         <Tooltip
@@ -80,7 +83,7 @@ export function MultiLineChart({
           cursor={{ stroke: "rgba(120,120,120,0.3)" }}
           formatter={(value, name) => {
             const s = series.find((x) => x.name === name);
-            return [formatLong(Number(value), s?.format ?? "currency"), name];
+            return [formatLong(Number(value), s?.format ?? "currency", currency), name];
           }}
         />
         <Legend
@@ -113,7 +116,7 @@ export function MultiLineChart({
               dataKey={s.key}
               position={s.labelPosition ?? "top"}
               offset={s.labelPosition ? 12 : 10 + i * 14}
-              formatter={(v: unknown) => formatCompact(Number(v), s.format)}
+              formatter={(v: unknown) => formatCompact(Number(v), s.format, currency)}
               fill="currentColor"
               fontSize={11}
               fontWeight={600}
@@ -143,7 +146,7 @@ export function MultiLineChart({
                   dataKey={`${s.key}__fc`}
                   position={s.labelPosition ?? "top"}
                   offset={s.labelPosition ? 12 : 10 + i * 14}
-                  formatter={(v: unknown) => formatCompact(Number(v), s.format)}
+                  formatter={(v: unknown) => formatCompact(Number(v), s.format, currency)}
                   fill={tint}
                   fontSize={11}
                   fontWeight={600}

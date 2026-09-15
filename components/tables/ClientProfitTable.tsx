@@ -6,6 +6,7 @@ import type { ClientProfitRow } from "@/lib/sources/client-profit";
 import { MultiSelectFilter, matchesFilter } from "@/components/ui/MultiSelectFilter";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 type SortKey = "client" | "revenue" | "peopleCost" | "profit" | "margin";
 
@@ -15,11 +16,13 @@ function BarCell({
   max,
   color,
   mutedWhenZero = true,
+  currency = GBP_VIEW,
 }: {
   value: number;
   max: number;
   color: string;
   mutedWhenZero?: boolean;
+  currency?: CurrencyView;
 }) {
   const pct = max > 0 ? Math.min(100, (Math.abs(value) / max) * 100) : 0;
   return (
@@ -28,7 +31,7 @@ function BarCell({
         {value === 0 && mutedWhenZero ? (
           <span className="text-muted-foreground">—</span>
         ) : (
-          formatCurrency(value, { compact: true })
+          formatCurrency(value, { compact: true, currency })
         )}
       </span>
       <span className="h-1.5 w-16 rounded bg-muted/40">
@@ -38,7 +41,13 @@ function BarCell({
   );
 }
 
-export function ClientProfitTable({ rows }: { rows: ClientProfitRow[] }) {
+export function ClientProfitTable({
+  rows,
+  currency = GBP_VIEW,
+}: {
+  rows: ClientProfitRow[];
+  currency?: CurrencyView;
+}) {
   const [query, setQuery] = useState("");
   const [services, setServices] = useState<string[]>([]);
   const [intensities, setIntensities] = useState<string[]>([]);
@@ -231,19 +240,20 @@ export function ClientProfitTable({ rows }: { rows: ClientProfitRow[] }) {
                     </span>
                   </td>
                   <td className="px-3 py-2">
-                    <BarCell value={r.revenue} max={max.revenue} color="bg-sky-500/70" />
+                    <BarCell value={r.revenue} max={max.revenue} color="bg-sky-500/70" currency={currency} />
                   </td>
                   <td className="px-3 py-2">
-                    <BarCell value={r.peopleCost} max={max.peopleCost} color="bg-rose-500/70" />
+                    <BarCell value={r.peopleCost} max={max.peopleCost} color="bg-rose-500/70" currency={currency} />
                   </td>
                   <td className="px-3 py-2">
-                    <BarCell value={r.referralFees} max={max.referralFees} color="bg-amber-500/70" />
+                    <BarCell value={r.referralFees} max={max.referralFees} color="bg-amber-500/70" currency={currency} />
                   </td>
                   <td className="px-3 py-2">
                     <BarCell
                       value={r.otherCosts + r.acquisitionCost}
                       max={max.otherCosts}
                       color="bg-orange-500/70"
+                      currency={currency}
                     />
                   </td>
                   <td className="px-3 py-2">
@@ -252,6 +262,7 @@ export function ClientProfitTable({ rows }: { rows: ClientProfitRow[] }) {
                       max={max.profit}
                       color={r.profit < 0 ? "bg-rose-500/70" : "bg-emerald-500/70"}
                       mutedWhenZero={false}
+                      currency={currency}
                     />
                   </td>
                   <td className="px-3 py-2 text-right">
@@ -275,19 +286,19 @@ export function ClientProfitTable({ rows }: { rows: ClientProfitRow[] }) {
                 Grand total
               </td>
               <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums">
-                {formatCurrency(totals.revenue, { compact: true })}
+                {formatCurrency(totals.revenue, { compact: true, currency })}
               </td>
               <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums">
-                {formatCurrency(totals.peopleCost, { compact: true })}
+                {formatCurrency(totals.peopleCost, { compact: true, currency })}
               </td>
               <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums">
-                {formatCurrency(totals.referralFees, { compact: true })}
+                {formatCurrency(totals.referralFees, { compact: true, currency })}
               </td>
               <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums">
-                {formatCurrency(totals.otherCosts, { compact: true })}
+                {formatCurrency(totals.otherCosts, { compact: true, currency })}
               </td>
               <td className="px-3 py-2.5 text-[13px] font-bold tabular-nums">
-                {formatCurrency(totals.profit, { compact: true })}
+                {formatCurrency(totals.profit, { compact: true, currency })}
               </td>
               <td className="px-3 py-2.5 text-right text-[13px] font-bold tabular-nums">
                 {totalMargin === null ? "—" : formatPercent(totalMargin)}

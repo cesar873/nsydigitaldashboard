@@ -4,10 +4,7 @@ import * as HoverCard from "@radix-ui/react-hover-card";
 import { AlertCircle, Check, Minus } from "lucide-react";
 import type { GoalProgress, GoalStatus } from "@/lib/planning";
 import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
-
-function fmt(value: number, format: GoalProgress["def"]["format"]) {
-  return format === "currency" ? formatCurrency(value, { compact: true }) : formatNumber(value);
-}
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 /**
  * One hue per status, in two tones: the solid tone is what is banked, the pale
@@ -75,7 +72,15 @@ function Row({
  * the page use `backdrop-filter`, which in Chromium paints above an in-flow
  * sibling no matter what z-index it carries.
  */
-export function GoalScorecard({ goal }: { goal: GoalProgress }) {
+export function GoalScorecard({
+  goal,
+  currency = GBP_VIEW,
+}: {
+  goal: GoalProgress;
+  currency?: CurrencyView;
+}) {
+  const fmt = (value: number, format: GoalProgress["def"]["format"]) =>
+    format === "currency" ? formatCurrency(value, { compact: true, currency }) : formatNumber(value);
   const {
     def, ytdActual, ytdPlanned, contracted, completion, planToDateFraction,
     fyPlanned, fyRunRate, difference, toGo, status,

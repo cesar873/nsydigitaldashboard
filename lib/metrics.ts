@@ -1,4 +1,5 @@
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 /**
  * Metric types and formatting, deliberately free of any sheet/server imports so
@@ -16,11 +17,15 @@ export type Metric = {
   byMonth: Map<string, number>;
 };
 
-export function formatMetric(value: number, format: MetricFormat): string {
+export function formatMetric(
+  value: number,
+  format: MetricFormat,
+  currency: CurrencyView = GBP_VIEW,
+): string {
   if (!Number.isFinite(value)) return "—";
   switch (format) {
     case "currency":
-      return formatCurrency(value, { compact: true });
+      return formatCurrency(value, { compact: true, currency });
     case "percent":
       return formatPercent(value, 1);
     case "ratio":

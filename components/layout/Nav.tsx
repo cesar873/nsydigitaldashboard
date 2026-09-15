@@ -17,7 +17,7 @@ const LINKS = [
 ];
 
 /** Global filters persist across tabs; page-specific params are dropped. */
-const PRESERVED = ["months", "from", "to"];
+const PRESERVED = ["months", "from", "to", "ccy"];
 
 export function Nav() {
   const pathname = usePathname();

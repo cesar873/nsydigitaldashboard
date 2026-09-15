@@ -9,6 +9,7 @@ import {
   formatCompact, formatLong, lighten, tickFormatterFor, yAxisWidthFor, type ValueKind,
 } from "./chart-shared";
 import { forecastMarkers } from "./ForecastMarkers";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type PlanVsActualDatum = {
   label: string;
@@ -34,12 +35,14 @@ export function PlanVsActualChart({
   height = 340,
   actualName = "Actual",
   planName = "Plan",
+  currency = GBP_VIEW,
 }: {
   data: PlanVsActualDatum[];
   format?: ValueKind;
   height?: number;
   actualName?: string;
   planName?: string;
+  currency?: CurrencyView;
 }) {
   const firstForecastIndex = data.findIndex((d) => !d.isActual);
   const actualTint = lighten(ACTUAL);
@@ -66,7 +69,7 @@ export function PlanVsActualChart({
           fontSize={10}
           fontWeight={600}
         >
-          {formatCompact(value, format)}
+          {formatCompact(value, format, currency)}
         </text>
       );
     };
@@ -110,14 +113,14 @@ export function PlanVsActualChart({
           tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={tickFormatterFor(format)}
+          tickFormatter={tickFormatterFor(format, currency)}
         />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
           labelStyle={TOOLTIP_LABEL_STYLE}
           itemStyle={TOOLTIP_ITEM_STYLE}
           cursor={{ stroke: "rgba(120,120,120,0.3)" }}
-          formatter={(value, name) => [formatLong(Number(value), format), name]}
+          formatter={(value, name) => [formatLong(Number(value), format, currency), name]}
         />
         <Legend
           verticalAlign="top"

@@ -12,6 +12,7 @@ import { WhatToDoNext } from "@/components/ui/WhatToDoNext";
 import { generateWhatToDoNextAnalytics } from "@/lib/insights/analytics";
 import { formatMonthShort, periodLabel } from "@/lib/months";
 import { resolveRange, type SearchParams } from "@/lib/default-range";
+import { currencyFrom } from "@/lib/currency";
 import {
   formatMetric, getMetrics, metricBy, metricValue, type Metric,
 } from "@/lib/sources/analytics";
@@ -27,6 +28,7 @@ export default async function AnalyticsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
+  const currency = currencyFrom(sp);
 
   let summary: IncomeSummary;
   let lastActual: string | null;
@@ -81,7 +83,7 @@ export default async function AnalyticsPage({
     return {
       key,
       label,
-      value: metric && value !== null ? formatMetric(value, metric.format) : "—",
+      value: metric && value !== null ? formatMetric(value, metric.format, currency) : "—",
       tone: tone && value !== null ? tone(value) : ("neutral" as Tone),
       delta: delta(key),
       inverse,
@@ -156,6 +158,7 @@ export default async function AnalyticsPage({
             prior: hasPrior ? range.priorMonths : [],
             priorLabel,
             hasPrior,
+            currency,
           })}
         />
 
@@ -182,6 +185,7 @@ export default async function AnalyticsPage({
               <MultiLineChart
                 data={ltvCacRows}
                 leftFormat="currency"
+                currency={currency}
                 firstForecastIndex={range.firstForecastIndex}
                 series={[
                   { key: "ltv", name: "LTV", color: "#1390eb", format: "currency" },
@@ -235,7 +239,7 @@ export default async function AnalyticsPage({
               Every metric from the Finance Model · heat is scaled within each row
             </span>
           </div>
-          <MetricMatrixTable metrics={metrics} columns={tableColumns} />
+          <MetricMatrixTable metrics={metrics} columns={tableColumns} currency={currency} />
         </section>
 
         <LiveFooter sources="Finance Model" />

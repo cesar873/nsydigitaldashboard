@@ -9,6 +9,7 @@ import { StackedBarChart } from "@/components/charts/StackedBarChart";
 import { MonthMatrixTable, type MatrixRow } from "@/components/tables/MonthMatrixTable";
 import { WhatToDoNext } from "@/components/ui/WhatToDoNext";
 import { resolveRange, type SearchParams } from "@/lib/default-range";
+import { currencyFrom } from "@/lib/currency";
 import { formatMonthShort, periodLabel } from "@/lib/months";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { generateWhatToDoNextExpensesFromModel } from "@/lib/insights/expenses";
@@ -26,6 +27,7 @@ export default async function ExpensesPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
+  const currency = currencyFrom(sp);
 
   // The page is driven by the Finance Model P&L, so its cost figures always tie
   // to the statement. The raw Transactions ledger is optional — it only powers
@@ -189,13 +191,14 @@ export default async function ExpensesPage({
             hasPrior ? range.priorMonths : [],
             priorLabel,
             revenue,
+            currency,
           )}
         />
 
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <KpiStat
             label="Total Expenses"
-            value={formatCurrency(cur, { compact: true })}
+            value={formatCurrency(cur, { compact: true, currency })}
             deltaInverse
             delta={hasPrior ? delta(cur, prior) : null}
             deltaLabel={deltaLabel}
@@ -207,11 +210,11 @@ export default async function ExpensesPage({
           />
           <KpiStat
             label="Cost of Sales"
-            value={formatCurrency(cogsCur, { compact: true })}
+            value={formatCurrency(cogsCur, { compact: true, currency })}
           />
           <KpiStat
             label="Operating Expenses"
-            value={formatCurrency(opexCur, { compact: true })}
+            value={formatCurrency(opexCur, { compact: true, currency })}
           />
           <KpiStat label="Categories" value={String(modelCategories.length)} />
         </section>
@@ -229,6 +232,7 @@ export default async function ExpensesPage({
                 series={stackKeys.map((k) => ({ key: k, name: k }))}
                 paletteSort="red"
                 format="currency"
+                currency={currency}
                 firstForecastIndex={range.firstForecastIndex}
               />
             )}
@@ -245,6 +249,7 @@ export default async function ExpensesPage({
           <MonthMatrixTable
             rows={categoryRows}
             columns={tableColumns}
+            currency={currency}
             primaryLabel="Category"
             secondaryLabel="Group"
             searchPlaceholder="Search category…"
@@ -267,6 +272,7 @@ export default async function ExpensesPage({
             <MonthMatrixTable
               rows={allCostRows}
               columns={actualColumns}
+              currency={currency}
               primaryLabel="Vendor / person"
               secondaryLabel="Category"
               searchPlaceholder="Search vendor / person…"

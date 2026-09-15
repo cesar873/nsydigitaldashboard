@@ -3,6 +3,7 @@ import type { Transaction } from "@/lib/sources/transactions";
 import type { ExpenseCategory } from "@/lib/sources/expense-categories";
 import { costByCategory, costByVendor, totalCost } from "@/lib/sources/transactions";
 import { formatCurrency, formatPercent } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export function generateWhatToDoNextExpenses(
   rows: Transaction[],
@@ -10,6 +11,7 @@ export function generateWhatToDoNextExpenses(
   prior: string[],
   priorLabel: string,
   revenue: number,
+  currency: CurrencyView = GBP_VIEW,
 ): Insight[] {
   const out: Insight[] = [];
   const cur = totalCost(rows, selected);
@@ -21,23 +23,23 @@ export function generateWhatToDoNextExpenses(
     if (change >= 0.05) {
       out.push({
         tone: "warn",
-        prose: `Spend up <b>${formatPercent(change)}</b> vs ${priorLabel}, to <b>${formatCurrency(cur, { compact: true })}</b>. Check whether revenue moved with it.`,
+        prose: `Spend up <b>${formatPercent(change)}</b> vs ${priorLabel}, to <b>${formatCurrency(cur, { compact: true, currency })}</b>. Check whether revenue moved with it.`,
       });
     } else if (change <= -0.05) {
       out.push({
         tone: "win",
-        prose: `Spend down <b>${formatPercent(Math.abs(change))}</b> vs ${priorLabel}, to <b>${formatCurrency(cur, { compact: true })}</b>.`,
+        prose: `Spend down <b>${formatPercent(Math.abs(change))}</b> vs ${priorLabel}, to <b>${formatCurrency(cur, { compact: true, currency })}</b>.`,
       });
     } else {
       out.push({
         tone: "info",
-        prose: `Spend flat vs ${priorLabel} at <b>${formatCurrency(cur, { compact: true })}</b>.`,
+        prose: `Spend flat vs ${priorLabel} at <b>${formatCurrency(cur, { compact: true, currency })}</b>.`,
       });
     }
   } else {
     out.push({
       tone: "info",
-      prose: `<b>${formatCurrency(cur, { compact: true })}</b> of spend in this period. No prior period in range.`,
+      prose: `<b>${formatCurrency(cur, { compact: true, currency })}</b> of spend in this period. No prior period in range.`,
     });
   }
 
@@ -74,12 +76,12 @@ export function generateWhatToDoNextExpenses(
   if (risers.length === 1) {
     out.push({
       tone: "warn",
-      prose: `<b>${risers[0].name}</b> rose ${formatPercent(risers[0].up)} vs ${priorLabel}, to ${formatCurrency(risers[0].v, { compact: true })}.`,
+      prose: `<b>${risers[0].name}</b> rose ${formatPercent(risers[0].up)} vs ${priorLabel}, to ${formatCurrency(risers[0].v, { compact: true, currency })}.`,
     });
   } else if (risers.length > 1) {
     out.push({
       tone: "warn",
-      prose: `<b>${risers.length} cost categories</b> grew vs ${priorLabel} — worst is <b>${risers[0].name}</b> at +${formatPercent(risers[0].up)} (${formatCurrency(risers[0].v, { compact: true })}).`,
+      prose: `<b>${risers.length} cost categories</b> grew vs ${priorLabel} — worst is <b>${risers[0].name}</b> at +${formatPercent(risers[0].up)} (${formatCurrency(risers[0].v, { compact: true, currency })}).`,
     });
   }
 
@@ -107,6 +109,7 @@ export function generateWhatToDoNextExpensesFromModel(
   prior: string[],
   priorLabel: string,
   revenue: number,
+  currency: CurrencyView = GBP_VIEW,
 ): Insight[] {
   const out: Insight[] = [];
   const sumOver = (months: string[]) =>
@@ -126,23 +129,23 @@ export function generateWhatToDoNextExpensesFromModel(
     if (change >= 0.05) {
       out.push({
         tone: "warn",
-        prose: `Spend up <b>${formatPercent(change)}</b> vs ${priorLabel}, to <b>${formatCurrency(cur, { compact: true })}</b>. Check whether revenue moved with it.`,
+        prose: `Spend up <b>${formatPercent(change)}</b> vs ${priorLabel}, to <b>${formatCurrency(cur, { compact: true, currency })}</b>. Check whether revenue moved with it.`,
       });
     } else if (change <= -0.05) {
       out.push({
         tone: "win",
-        prose: `Spend down <b>${formatPercent(Math.abs(change))}</b> vs ${priorLabel}, to <b>${formatCurrency(cur, { compact: true })}</b>.`,
+        prose: `Spend down <b>${formatPercent(Math.abs(change))}</b> vs ${priorLabel}, to <b>${formatCurrency(cur, { compact: true, currency })}</b>.`,
       });
     } else {
       out.push({
         tone: "info",
-        prose: `Spend flat vs ${priorLabel} at <b>${formatCurrency(cur, { compact: true })}</b>.`,
+        prose: `Spend flat vs ${priorLabel} at <b>${formatCurrency(cur, { compact: true, currency })}</b>.`,
       });
     }
   } else {
     out.push({
       tone: "info",
-      prose: `<b>${formatCurrency(cur, { compact: true })}</b> of spend in this period. No prior period in range.`,
+      prose: `<b>${formatCurrency(cur, { compact: true, currency })}</b> of spend in this period. No prior period in range.`,
     });
   }
 
@@ -177,12 +180,12 @@ export function generateWhatToDoNextExpensesFromModel(
   if (risers.length === 1) {
     out.push({
       tone: "warn",
-      prose: `<b>${risers[0].name}</b> rose ${formatPercent(risers[0].up)} vs ${priorLabel}, to ${formatCurrency(risers[0].v, { compact: true })}.`,
+      prose: `<b>${risers[0].name}</b> rose ${formatPercent(risers[0].up)} vs ${priorLabel}, to ${formatCurrency(risers[0].v, { compact: true, currency })}.`,
     });
   } else if (risers.length > 1) {
     out.push({
       tone: "warn",
-      prose: `<b>${risers.length} cost categories</b> grew vs ${priorLabel} — worst is <b>${risers[0].name}</b> at +${formatPercent(risers[0].up)} (${formatCurrency(risers[0].v, { compact: true })}).`,
+      prose: `<b>${risers.length} cost categories</b> grew vs ${priorLabel} — worst is <b>${risers[0].name}</b> at +${formatPercent(risers[0].up)} (${formatCurrency(risers[0].v, { compact: true, currency })}).`,
     });
   }
 

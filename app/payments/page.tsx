@@ -13,6 +13,7 @@ import {
 import { getBookkeeping } from "@/lib/sources/bookkeeping";
 import { getLastActualMonth } from "@/lib/sources/stats";
 import type { SearchParams } from "@/lib/default-range";
+import { currencyFrom } from "@/lib/currency";
 
 export const revalidate = 300;
 export const metadata = { title: "Payments · Finance Dashboard" };
@@ -22,7 +23,8 @@ export default async function PaymentsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await searchParams;
+  const sp = await searchParams;
+  const currency = currencyFrom(sp);
 
   let invoices, bookkeeping, lastActual;
   try {
@@ -85,13 +87,13 @@ export default async function PaymentsPage({
   if (overdue.length > 0) {
     insights.push({
       tone: worstOverdue > 90 ? "alert" : "warn",
-      prose: `<b>${formatCurrency(overdueTotal, { compact: true })}</b> is overdue across <b>${overdue.length}</b> ${overdue.length === 1 ? "invoice" : "invoices"} — the oldest by <b>${formatNumber(worstOverdue)} days</b>. Chase these before anything else.`,
+      prose: `<b>${formatCurrency(overdueTotal, { compact: true, currency })}</b> is overdue across <b>${overdue.length}</b> ${overdue.length === 1 ? "invoice" : "invoices"} — the oldest by <b>${formatNumber(worstOverdue)} days</b>. Chase these before anything else.`,
     });
   }
   if (pipeline.length > 0) {
     insights.push({
       tone: "info",
-      prose: `<b>${pipeline.length}</b> ${pipeline.length === 1 ? "invoice is" : "invoices are"} drafted but not sent${pipelineTotal > 0 ? ` (<b>${formatCurrency(pipelineTotal, { compact: true })}</b>)` : ""}. Nothing gets collected until they go out.`,
+      prose: `<b>${pipeline.length}</b> ${pipeline.length === 1 ? "invoice is" : "invoices are"} drafted but not sent${pipelineTotal > 0 ? ` (<b>${formatCurrency(pipelineTotal, { compact: true, currency })}</b>)` : ""}. Nothing gets collected until they go out.`,
     });
   }
   if (openBookkeeping.length > 0) {
@@ -136,29 +138,29 @@ export default async function PaymentsPage({
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <KpiStat
           label="Outstanding AR"
-          value={formatCurrency(outstandingTotal, { compact: true })}
+          value={formatCurrency(outstandingTotal, { compact: true, currency })}
           tone={outstandingTotal > 0 ? "warning" : "success"}
           deltaLabel={`${outstanding.length} open`}
         />
         <KpiStat
           label="Overdue"
-          value={formatCurrency(overdueTotal, { compact: true })}
+          value={formatCurrency(overdueTotal, { compact: true, currency })}
           tone={overdueTotal > 0 ? "danger" : "success"}
           deltaLabel={overdue.length > 0 ? `worst ${worstOverdue}d` : "none late"}
         />
         <KpiStat
           label="Due next 7 days"
-          value={formatCurrency(dueSoonTotal, { compact: true })}
+          value={formatCurrency(dueSoonTotal, { compact: true, currency })}
           deltaLabel={dueSoon.length > 0 ? `${dueSoon.length} due` : "nothing imminent"}
         />
         <KpiStat
           label="Pipeline (pre-send)"
-          value={formatCurrency(pipelineTotal, { compact: true })}
+          value={formatCurrency(pipelineTotal, { compact: true, currency })}
           deltaLabel={`${pipeline.length} drafts`}
         />
         <KpiStat
           label={`Collected · ${periodLabel}`}
-          value={formatCurrency(collectedTotal, { compact: true })}
+          value={formatCurrency(collectedTotal, { compact: true, currency })}
           tone={collectedTotal > 0 ? "success" : "neutral"}
           deltaLabel={`${collected.length} paid`}
         />
@@ -169,8 +171,9 @@ export default async function PaymentsPage({
           pipeline={pipeline}
           bookkeeping={bookkeeping.rows}
           categoryOptions={bookkeeping.categoryOptions}
+          currency={currency}
         />
-        <OutstandingPanel outstanding={outstanding} />
+        <OutstandingPanel outstanding={outstanding} currency={currency} />
       </section>
 
       <LiveFooter sources="Invoices + Bookkeeping" />

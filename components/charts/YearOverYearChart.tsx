@@ -9,6 +9,7 @@ import {
   GRID_STROKE, LINE_TOOLTIP_STYLE, TOOLTIP_ITEM_STYLE, TOOLTIP_LABEL_STYLE,
   formatCompact, formatLong, tickFormatterFor, yAxisWidthFor, type ValueKind,
 } from "./chart-shared";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type YoyMetric = {
   key: string;
@@ -28,10 +29,12 @@ export function YearOverYearChart({
   metrics,
   years,
   height = 340,
+  currency = GBP_VIEW,
 }: {
   metrics: YoyMetric[];
   years: number[];
   height?: number;
+  currency?: CurrencyView;
 }) {
   const [metricKey, setMetricKey] = useState(metrics[0]?.key ?? "");
   const metric = metrics.find((m) => m.key === metricKey) ?? metrics[0];
@@ -92,14 +95,14 @@ export function YearOverYearChart({
             tick={{ fontSize: 10, fill: "currentColor" }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={tickFormatterFor(metric.format)}
+            tickFormatter={tickFormatterFor(metric.format, currency)}
           />
           <Tooltip
             contentStyle={LINE_TOOLTIP_STYLE}
             labelStyle={TOOLTIP_LABEL_STYLE}
             itemStyle={TOOLTIP_ITEM_STYLE}
             cursor={{ stroke: "rgba(120,120,120,0.3)" }}
-            formatter={(value, name) => [formatLong(Number(value), metric.format), name]}
+            formatter={(value, name) => [formatLong(Number(value), metric.format, currency), name]}
           />
           <Legend
             verticalAlign="top"
@@ -129,7 +132,7 @@ export function YearOverYearChart({
                 fontSize={i === years.length - 1 ? 11 : 10}
                 fontWeight={i === years.length - 1 ? 700 : 600}
                 formatter={(v: unknown) =>
-                  v === null || v === undefined ? "" : formatCompact(Number(v), metric.format)
+                  v === null || v === undefined ? "" : formatCompact(Number(v), metric.format, currency)
                 }
               />
             </Line>

@@ -1,3 +1,5 @@
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
+
 export const DATA_LABEL_STYLE = {
   fill: "currentColor",
   fontSize: 11,
@@ -90,32 +92,48 @@ export function splitForecast<T extends Record<string, unknown>>(
 
 export type ValueKind = "currency" | "percent" | "number";
 
-export function formatCompact(n: number, kind: ValueKind = "currency"): string {
+/**
+ * Currency values arrive in the base currency (GBP). Passing the active
+ * `CurrencyView` converts (× rate) and swaps the symbol; omitting it renders
+ * the base currency. Non-currency kinds ignore it.
+ */
+export function formatCompact(
+  n: number,
+  kind: ValueKind = "currency",
+  cur: CurrencyView = GBP_VIEW,
+): string {
   if (!Number.isFinite(n)) return "—";
   if (kind === "percent") return `${Math.round(n * 100)}%`;
   if (kind === "number") return new Intl.NumberFormat("en-US").format(Math.round(n));
-  const abs = Math.abs(n);
-  const sign = n < 0 ? "-" : "";
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(1)}K`;
-  return `${sign}$${Math.round(abs)}`;
+  const v = n * cur.rate;
+  const abs = Math.abs(v);
+  const sign = v < 0 ? "-" : "";
+  const sym = cur.symbol;
+  if (abs >= 1_000_000) return `${sign}${sym}${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `${sign}${sym}${(abs / 1_000).toFixed(1)}K`;
+  return `${sign}${sym}${Math.round(abs)}`;
 }
 
-export function formatLong(n: number, kind: ValueKind = "currency"): string {
+export function formatLong(
+  n: number,
+  kind: ValueKind = "currency",
+  cur: CurrencyView = GBP_VIEW,
+): string {
   if (!Number.isFinite(n)) return "—";
   if (kind === "percent") return `${(n * 100).toFixed(1)}%`;
   if (kind === "number") return new Intl.NumberFormat("en-US").format(Math.round(n));
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("en-GB", {
     style: "currency",
-    currency: "USD",
+    currency: cur.code,
     maximumFractionDigits: 0,
-  }).format(n);
+    currencyDisplay: "narrowSymbol",
+  }).format(n * cur.rate);
 }
 
-export function tickFormatterFor(kind: ValueKind) {
+export function tickFormatterFor(kind: ValueKind, cur: CurrencyView = GBP_VIEW) {
   if (kind === "percent") return (v: number) => `${Math.round(v * 100)}%`;
   if (kind === "number") return (v: number) => new Intl.NumberFormat("en-US").format(Math.round(v));
-  return (v: number) => formatCompact(v, "currency");
+  return (v: number) => formatCompact(v, "currency", cur);
 }
 
 export function yAxisWidthFor(kind: ValueKind) {

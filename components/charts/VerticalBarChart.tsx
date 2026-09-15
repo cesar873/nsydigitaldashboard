@@ -8,16 +8,20 @@ import {
   formatCompact, formatLong, tickFormatterFor, yAxisWidthFor, type ValueKind,
 } from "./chart-shared";
 
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
+
 export function VerticalBarChart({
   data,
   format = "currency",
   color = "#1390eb",
   height = 280,
+  currency = GBP_VIEW,
 }: {
   data: { name: string; value: number }[];
   format?: ValueKind;
   color?: string;
   height?: number;
+  currency?: CurrencyView;
 }) {
   const sorted = [...data].sort((a, b) => b.value - a.value);
 
@@ -36,14 +40,14 @@ export function VerticalBarChart({
           tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={tickFormatterFor(format)}
+          tickFormatter={tickFormatterFor(format, currency)}
         />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
           labelStyle={TOOLTIP_LABEL_STYLE}
           itemStyle={TOOLTIP_ITEM_STYLE}
           cursor={{ fill: "rgba(120,120,120,0.08)" }}
-          formatter={(value) => [formatLong(Number(value), format), "Value"]}
+          formatter={(value) => [formatLong(Number(value), format, currency), "Value"]}
         />
         <Bar
           dataKey="value"
@@ -57,7 +61,7 @@ export function VerticalBarChart({
             dataKey="value"
             position="top"
             offset={6}
-            formatter={(v: unknown) => formatCompact(Number(v), format)}
+            formatter={(v: unknown) => formatCompact(Number(v), format, currency)}
             style={{ fill: "currentColor", fontSize: 11, fontWeight: 600 }}
           />
         </Bar>

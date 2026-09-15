@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { MultiSelectFilter, matchesFilter } from "@/components/ui/MultiSelectFilter";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type MatrixRow = {
   key: string;
@@ -79,6 +80,7 @@ export function MonthMatrixTable({
   totalLabel = "Total",
   hideEmptyRows = true,
   signedValues = false,
+  currency = GBP_VIEW,
 }: {
   rows: MatrixRow[];
   columns: MatrixColumn[];
@@ -98,6 +100,7 @@ export function MonthMatrixTable({
   hideEmptyRows?: boolean;
   /** Negative values are inflows (refunds) and render green, not red. */
   signedValues?: boolean;
+  currency?: CurrencyView;
 }) {
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"absolute" | "share">("absolute");
@@ -281,7 +284,7 @@ export function MonthMatrixTable({
 
         <span className="ml-auto text-[11px] text-muted-foreground">
           {sorted.length} of {rows.length} · grand total{" "}
-          {formatCurrency(grandTotal, { compact: true })}
+          {formatCurrency(grandTotal, { compact: true, currency })}
         </span>
       </div>
 
@@ -445,7 +448,7 @@ export function MonthMatrixTable({
                               {empty
                                 ? "—"
                                 : mode === "absolute"
-                                  ? formatCurrency(value, { compact: true })
+                                  ? formatCurrency(value, { compact: true, currency })
                                   : formatPercent(value, 1)}
                             </div>
                           </div>
@@ -455,7 +458,7 @@ export function MonthMatrixTable({
 
                     <td className="border-l border-border/40 px-3 py-2 text-center text-sm font-semibold tabular-nums">
                       {mode === "absolute"
-                        ? formatCurrency(total, { compact: true })
+                        ? formatCurrency(total, { compact: true, currency })
                         : grandTotal === 0
                           ? "—"
                           : formatPercent(total / grandTotal, 1)}
@@ -483,7 +486,7 @@ export function MonthMatrixTable({
                   mode === "absolute"
                     ? t === 0
                       ? "—"
-                      : formatCurrency(t, { compact: true })
+                      : formatCurrency(t, { compact: true, currency })
                     : denomFor(c.iso) === 0
                       ? "—"
                       : formatPercent(t / denomFor(c.iso), 1);
@@ -501,7 +504,7 @@ export function MonthMatrixTable({
               })}
               <td className="sticky-bg border-l border-border/40 px-3 py-2.5 text-center text-sm font-bold tabular-nums">
                 {mode === "absolute"
-                  ? formatCurrency(grandTotal, { compact: true })
+                  ? formatCurrency(grandTotal, { compact: true, currency })
                   : shareDenominator
                     ? "—"
                     : "100.0%"}

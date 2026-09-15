@@ -1,10 +1,7 @@
 import type { Insight } from "@/components/ui/WhatToDoNext";
 import type { GoalProgress } from "@/lib/planning";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
-
-function fmt(v: number, f: "currency" | "number") {
-  return f === "currency" ? formatCurrency(v, { compact: true }) : formatNumber(v);
-}
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export function generateWhatToDoNextForecast({
   goals,
@@ -15,6 +12,7 @@ export function generateWhatToDoNextForecast({
   monthMisses,
   elapsedMonths,
   duplicateLabels,
+  currency = GBP_VIEW,
 }: {
   goals: GoalProgress[];
   scenarioLabel: string;
@@ -24,7 +22,10 @@ export function generateWhatToDoNextForecast({
   monthMisses: { label: string; actual: number; plan: number }[];
   elapsedMonths: number;
   duplicateLabels: string[];
+  currency?: CurrencyView;
 }): Insight[] {
+  const fmt = (v: number, f: "currency" | "number") =>
+    f === "currency" ? formatCurrency(v, { compact: true, currency }) : formatNumber(v);
   const out: Insight[] = [];
   // "Finance Plan" yields the label "Plan", which would read as "the Plan plan".
   const planName = /^plan$/i.test(scenarioLabel) ? "plan" : `${scenarioLabel} plan`;
@@ -109,13 +110,13 @@ export function generateWhatToDoNextForecast({
     const m = monthMisses[0];
     out.push({
       tone: "warn",
-      prose: `One month missed its revenue plan: <b>${m.label}</b> came in at ${formatCurrency(m.actual, { compact: true })} against ${formatCurrency(m.plan, { compact: true })}.`,
+      prose: `One month missed its revenue plan: <b>${m.label}</b> came in at ${formatCurrency(m.actual, { compact: true, currency })} against ${formatCurrency(m.plan, { compact: true, currency })}.`,
     });
   } else if (monthMisses.length > 1) {
     const worst = [...monthMisses].sort((a, b) => a.actual - a.plan - (b.actual - b.plan))[0];
     out.push({
       tone: monthMisses.length >= 4 ? "alert" : "warn",
-      prose: `<b>${monthMisses.length} of ${elapsedMonths} elapsed months</b> missed their revenue plan — worst was <b>${worst.label}</b>, short by ${formatCurrency(Math.abs(worst.actual - worst.plan), { compact: true })}.${monthMisses.length >= 4 ? " At that frequency the plan is the problem, not the month." : ""}`,
+      prose: `<b>${monthMisses.length} of ${elapsedMonths} elapsed months</b> missed their revenue plan — worst was <b>${worst.label}</b>, short by ${formatCurrency(Math.abs(worst.actual - worst.plan), { compact: true, currency })}.${monthMisses.length >= 4 ? " At that frequency the plan is the problem, not the month." : ""}`,
     });
   } else if (elapsedMonths > 0) {
     out.push({

@@ -24,6 +24,7 @@ import { buildDrivers, monthElapsedFraction } from "@/lib/targets";
 import { listScenarios, resolveScenario } from "@/lib/sources/scenarios";
 import { TABS } from "@/lib/config";
 import { resolveRange, type SearchParams } from "@/lib/default-range";
+import { currencyFrom } from "@/lib/currency";
 
 export const revalidate = 300;
 export const metadata = { title: "Forecast · Finance Dashboard" };
@@ -53,6 +54,7 @@ export default async function ForecastPage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
+  const currency = currencyFrom(sp);
 
   let actuals: IncomeSummary;
   let scenarios;
@@ -324,6 +326,7 @@ export default async function ForecastPage({
     monthMisses,
     elapsedMonths: fyActualMonths.length,
     duplicateLabels: plan.duplicateLabels,
+    currency,
   });
 
   const rangeLabel = `${formatMonthShort(months[0])} → ${formatMonthShort(months[months.length - 1])}`;
@@ -372,7 +375,7 @@ export default async function ForecastPage({
 
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {scorecardGoals.map((g) => (
-            <GoalScorecard key={g.def.key} goal={g} />
+            <GoalScorecard key={g.def.key} goal={g} currency={currency} />
           ))}
         </section>
 
@@ -401,7 +404,7 @@ export default async function ForecastPage({
                         >
                           {gap === 0
                             ? ""
-                            : formatCurrency(Math.abs(gap), { compact: true })}
+                            : formatCurrency(Math.abs(gap), { compact: true, currency })}
                         </span>
                       </>
                     );
@@ -412,7 +415,7 @@ export default async function ForecastPage({
             {revenueSeries.length === 0 ? (
               <EmptyChart message="No months in the selected range." />
             ) : (
-              <PlanVsActualChart data={revenueSeries} height={380} />
+              <PlanVsActualChart data={revenueSeries} height={380} currency={currency} />
             )}
           </CardShell>
         </section>
@@ -426,6 +429,7 @@ export default async function ForecastPage({
             months={fyMonths}
             currentMonthIso={currentMonthIso}
             elapsed={elapsed}
+            currency={currency}
           />
         </section>
 
@@ -436,7 +440,7 @@ export default async function ForecastPage({
               Actual against target each month · bar fills to target, overshoot means ahead
             </span>
           </div>
-          <DriverTable drivers={drivers} months={fyMonths} currentMonthIso={currentMonthIso} />
+          <DriverTable drivers={drivers} months={fyMonths} currentMonthIso={currentMonthIso} currency={currency} />
         </section>
 
         <section className="mt-8">
@@ -458,7 +462,7 @@ export default async function ForecastPage({
               }}
             >
               {serviceLines.map((line) => (
-                <ServiceLineCard key={line.name} line={line} />
+                <ServiceLineCard key={line.name} line={line} currency={currency} />
               ))}
             </div>
           )}
@@ -475,6 +479,7 @@ export default async function ForecastPage({
             rows={bvaRows}
             months={months}
             monthLabels={months.map(formatMonthShort)}
+            currency={currency}
           />
         </section>
 

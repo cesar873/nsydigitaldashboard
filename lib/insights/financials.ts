@@ -1,5 +1,6 @@
 import type { Insight } from "@/components/ui/WhatToDoNext";
 import { formatCurrency, formatPercent } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type FinancialsTotals = {
   revenue: number;
@@ -22,6 +23,7 @@ export function generateWhatToDoNextFinancials(
   cur: FinancialsTotals,
   prior: FinancialsTotals | null,
   priorLabel: string,
+  currency: CurrencyView = GBP_VIEW,
 ): Insight[] {
   const out: Insight[] = [];
 
@@ -30,17 +32,17 @@ export function generateWhatToDoNextFinancials(
   if (profit < 0) {
     out.push({
       tone: "alert",
-      prose: `Running a loss of <b>${formatCurrency(Math.abs(profit), { compact: true })}</b> on ${formatCurrency(cur.revenue, { compact: true })} of revenue. Cost base needs a cut, or pricing needs a rise — the gap won't close on volume alone.`,
+      prose: `Running a loss of <b>${formatCurrency(Math.abs(profit), { compact: true, currency })}</b> on ${formatCurrency(cur.revenue, { compact: true, currency })} of revenue. Cost base needs a cut, or pricing needs a rise — the gap won't close on volume alone.`,
     });
   } else if (margin !== null && margin >= 0.15) {
     out.push({
       tone: "win",
-      prose: `Healthy period: <b>${formatCurrency(profit, { compact: true })}</b> profit at a <b>${formatPercent(margin)}</b> margin. That's comfortably above the 15% line — room to reinvest.`,
+      prose: `Healthy period: <b>${formatCurrency(profit, { compact: true, currency })}</b> profit at a <b>${formatPercent(margin)}</b> margin. That's comfortably above the 15% line — room to reinvest.`,
     });
   } else if (margin !== null) {
     out.push({
       tone: "info",
-      prose: `Profitable but thin — <b>${formatCurrency(profit, { compact: true })}</b> at <b>${formatPercent(margin)}</b>. Under 15% leaves little absorption for a bad month.`,
+      prose: `Profitable but thin — <b>${formatCurrency(profit, { compact: true, currency })}</b> at <b>${formatPercent(margin)}</b>. Under 15% leaves little absorption for a bad month.`,
     });
   }
 
@@ -115,18 +117,18 @@ export function generateWhatToDoNextFinancials(
     if (cur.endingCash < 0) {
       out.push({
         tone: "alert",
-        prose: `Ending cash is negative at <b>${formatCurrency(cur.endingCash, { compact: true })}</b>. This is a solvency question, not a reporting one.`,
+        prose: `Ending cash is negative at <b>${formatCurrency(cur.endingCash, { compact: true, currency })}</b>. This is a solvency question, not a reporting one.`,
       });
     } else if (prior?.endingCash != null && cur.endingCash < prior.endingCash) {
       const burn = prior.endingCash - cur.endingCash;
       out.push({
         tone: "warn",
-        prose: `Cash fell <b>${formatCurrency(burn, { compact: true })}</b> vs ${priorLabel} to ${formatCurrency(cur.endingCash, { compact: true })}. Profitable months that still burn cash usually mean collections, not costs.`,
+        prose: `Cash fell <b>${formatCurrency(burn, { compact: true, currency })}</b> vs ${priorLabel} to ${formatCurrency(cur.endingCash, { compact: true, currency })}. Profitable months that still burn cash usually mean collections, not costs.`,
       });
     } else {
       out.push({
         tone: "info",
-        prose: `Ending cash <b>${formatCurrency(cur.endingCash, { compact: true })}</b>.`,
+        prose: `Ending cash <b>${formatCurrency(cur.endingCash, { compact: true, currency })}</b>.`,
       });
     }
   }

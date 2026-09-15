@@ -10,6 +10,7 @@ import { StackedBarChart } from "@/components/charts/StackedBarChart";
 import { WhatToDoNext } from "@/components/ui/WhatToDoNext";
 import { MonthMatrixTable, type MatrixRow } from "@/components/tables/MonthMatrixTable";
 import { resolveRange, type SearchParams } from "@/lib/default-range";
+import { currencyFrom } from "@/lib/currency";
 import { formatMonthShort, periodLabel } from "@/lib/months";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { generateWhatToDoNextRevenue } from "@/lib/insights/revenue";
@@ -29,6 +30,7 @@ export default async function RevenuePage({
   searchParams: Promise<SearchParams>;
 }) {
   const sp = await searchParams;
+  const currency = currencyFrom(sp);
 
   let data, lastActual;
   try {
@@ -147,13 +149,14 @@ export default async function RevenuePage({
             range.selectedMonths,
             hasPrior ? range.priorMonths : [],
             priorLabel,
+            currency,
           )}
         />
 
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <KpiStat
             label="Total Revenue"
-            value={formatCurrency(total, { compact: true })}
+            value={formatCurrency(total, { compact: true, currency })}
             delta={hasPrior ? delta(total, priorTotal) : null}
             deltaLabel={deltaLabel}
           />
@@ -165,7 +168,7 @@ export default async function RevenuePage({
           />
           <KpiStat
             label="Avg / Client"
-            value={formatCurrency(avgPerClient, { compact: true })}
+            value={formatCurrency(avgPerClient, { compact: true, currency })}
             delta={
               hasPrior && priorClients.size > 0
                 ? delta(avgPerClient, priorTotal / priorClients.size)
@@ -198,6 +201,7 @@ export default async function RevenuePage({
                 series={byService.keys.map((k) => ({ key: k, name: k }))}
                 paletteSort="blue"
                 format="currency"
+                currency={currency}
                 firstForecastIndex={range.firstForecastIndex}
               />
             )}
@@ -209,21 +213,21 @@ export default async function RevenuePage({
             {serviceSnapshot.length === 0 ? (
               <EmptyChart height={260} message="No data." />
             ) : (
-              <RankedBarChart data={serviceSnapshot} color="#1390eb" />
+              <RankedBarChart data={serviceSnapshot} color="#1390eb" currency={currency} />
             )}
           </CardShell>
           <CardShell title="By intensity" className="flex h-full flex-col">
             {intensitySnapshot.length === 0 ? (
               <EmptyChart height={260} message="No data." />
             ) : (
-              <RankedBarChart data={intensitySnapshot} color="#22c55e" />
+              <RankedBarChart data={intensitySnapshot} color="#22c55e" currency={currency} />
             )}
           </CardShell>
           <CardShell title="By source" className="flex h-full flex-col">
             {sourceSnapshot.length === 0 ? (
               <EmptyChart height={260} message="No data." />
             ) : (
-              <RankedBarChart data={sourceSnapshot} color="#c084fc" />
+              <RankedBarChart data={sourceSnapshot} color="#c084fc" currency={currency} />
             )}
           </CardShell>
         </section>
@@ -238,6 +242,7 @@ export default async function RevenuePage({
           <MonthMatrixTable
             rows={tableRows}
             columns={tableColumns}
+            currency={currency}
             primaryLabel="Client"
             secondaryLabel="Service"
             showStatus

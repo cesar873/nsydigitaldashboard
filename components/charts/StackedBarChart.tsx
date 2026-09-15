@@ -10,6 +10,7 @@ import {
   tickFormatterFor, yAxisWidthFor, type ValueKind,
 } from "./chart-shared";
 import { forecastMarkers } from "./ForecastMarkers";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type StackSeries = { key: string; name: string; color?: string };
 
@@ -20,6 +21,7 @@ export function StackedBarChart({
   format = "currency",
   paletteSort,
   firstForecastIndex = -1,
+  currency = GBP_VIEW,
 }: {
   data: Record<string, string | number>[];
   series: StackSeries[];
@@ -27,6 +29,7 @@ export function StackedBarChart({
   format?: ValueKind;
   paletteSort?: "blue" | "red";
   firstForecastIndex?: number;
+  currency?: CurrencyView;
 }) {
   // Drop series that are zero in every month.
   const active = series.filter((s) => data.some((d) => Number(d[s.key] ?? 0) !== 0));
@@ -67,14 +70,14 @@ export function StackedBarChart({
           tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={tickFormatterFor(format)}
+          tickFormatter={tickFormatterFor(format, currency)}
         />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
           labelStyle={TOOLTIP_LABEL_STYLE}
           itemStyle={TOOLTIP_ITEM_STYLE}
           cursor={{ fill: "rgba(120,120,120,0.08)" }}
-          formatter={(value, name) => [formatLong(Number(value), format), name]}
+          formatter={(value, name) => [formatLong(Number(value), format, currency), name]}
         />
         <Legend
           verticalAlign="top"
@@ -124,7 +127,7 @@ export function StackedBarChart({
             dataKey="__total"
             position="top"
             offset={10}
-            formatter={(v: unknown) => formatCompact(Number(v), format)}
+            formatter={(v: unknown) => formatCompact(Number(v), format, currency)}
             style={{ fill: "currentColor", fontSize: 11, fontWeight: 600 }}
           />
         </Line>

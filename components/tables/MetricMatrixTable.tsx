@@ -2,6 +2,7 @@
 
 import { formatMetric, type Metric } from "@/lib/metrics";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 import { useState } from "react";
 
 export type MetricColumn = { iso: string; label: string; isForecast: boolean };
@@ -13,9 +14,11 @@ export type MetricColumn = { iso: string; label: string; isForecast: boolean };
 export function MetricMatrixTable({
   metrics,
   columns,
+  currency = GBP_VIEW,
 }: {
   metrics: Metric[];
   columns: MetricColumn[];
+  currency?: CurrencyView;
 }) {
   const [hoverRow, setHoverRow] = useState<string | null>(null);
   const [hoverMonth, setHoverMonth] = useState<string | null>(null);
@@ -112,7 +115,7 @@ export function MetricMatrixTable({
                             empty && "text-muted-foreground/40",
                           )}
                         >
-                          {empty ? "—" : formatMetric(value, metric.format)}
+                          {empty ? "—" : formatMetric(value, metric.format, currency)}
                         </div>
                       </div>
                     </td>

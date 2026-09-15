@@ -1,6 +1,7 @@
 import type { Insight } from "@/components/ui/WhatToDoNext";
 import type { ClientRevenue } from "@/lib/sources/client-revenue";
 import { formatCurrency, formatPercent } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 function totalFor(data: ClientRevenue, months: string[]): number {
   return data.rows.reduce(
@@ -23,6 +24,7 @@ export function generateWhatToDoNextRevenue(
   selected: string[],
   prior: string[],
   priorLabel: string,
+  currency: CurrencyView = GBP_VIEW,
 ): Insight[] {
   const out: Insight[] = [];
   const cur = perClient(data, selected);
@@ -36,23 +38,23 @@ export function generateWhatToDoNextRevenue(
     if (change >= 0.05) {
       out.push({
         tone: "win",
-        prose: `Revenue up <b>${formatPercent(change)}</b> vs ${priorLabel}, to <b>${formatCurrency(curTotal, { compact: true })}</b> across ${cur.size} billing ${cur.size === 1 ? "client" : "clients"}.`,
+        prose: `Revenue up <b>${formatPercent(change)}</b> vs ${priorLabel}, to <b>${formatCurrency(curTotal, { compact: true, currency })}</b> across ${cur.size} billing ${cur.size === 1 ? "client" : "clients"}.`,
       });
     } else if (change <= -0.05) {
       out.push({
         tone: "warn",
-        prose: `Revenue down <b>${formatPercent(Math.abs(change))}</b> vs ${priorLabel}, to <b>${formatCurrency(curTotal, { compact: true })}</b>. Check the decliners below before assuming it's seasonal.`,
+        prose: `Revenue down <b>${formatPercent(Math.abs(change))}</b> vs ${priorLabel}, to <b>${formatCurrency(curTotal, { compact: true, currency })}</b>. Check the decliners below before assuming it's seasonal.`,
       });
     } else {
       out.push({
         tone: "info",
-        prose: `Revenue held within 5% of ${priorLabel} at <b>${formatCurrency(curTotal, { compact: true })}</b>.`,
+        prose: `Revenue held within 5% of ${priorLabel} at <b>${formatCurrency(curTotal, { compact: true, currency })}</b>.`,
       });
     }
   } else {
     out.push({
       tone: "info",
-      prose: `<b>${formatCurrency(curTotal, { compact: true })}</b> billed across ${cur.size} ${cur.size === 1 ? "client" : "clients"}. No prior period in range to compare against.`,
+      prose: `<b>${formatCurrency(curTotal, { compact: true, currency })}</b> billed across ${cur.size} ${cur.size === 1 ? "client" : "clients"}. No prior period in range to compare against.`,
     });
   }
 
@@ -70,7 +72,7 @@ export function generateWhatToDoNextRevenue(
     const d = severe[0];
     out.push({
       tone: "alert",
-      prose: `<b>${d.client}</b> fell ${formatPercent(d.drop)} vs ${priorLabel} (${formatCurrency(d.was, { compact: true })} to ${formatCurrency(d.v, { compact: true })}). A drop that size is usually a scope change or a churn signal — confirm which.`,
+      prose: `<b>${d.client}</b> fell ${formatPercent(d.drop)} vs ${priorLabel} (${formatCurrency(d.was, { compact: true, currency })} to ${formatCurrency(d.v, { compact: true, currency })}). A drop that size is usually a scope change or a churn signal — confirm which.`,
     });
   } else if (severe.length > 1) {
     out.push({
@@ -89,13 +91,13 @@ export function generateWhatToDoNextRevenue(
   if (newClients.length === 1) {
     out.push({
       tone: "win",
-      prose: `<b>${newClients[0]}</b> started billing this period at ${formatCurrency(cur.get(newClients[0])!, { compact: true })}.`,
+      prose: `<b>${newClients[0]}</b> started billing this period at ${formatCurrency(cur.get(newClients[0])!, { compact: true, currency })}.`,
     });
   } else if (newClients.length > 1) {
     const added = newClients.reduce((a, c) => a + (cur.get(c) ?? 0), 0);
     out.push({
       tone: "win",
-      prose: `<b>${newClients.length} new clients</b> came online, adding ${formatCurrency(added, { compact: true })} — led by ${newClients[0]}.`,
+      prose: `<b>${newClients.length} new clients</b> came online, adding ${formatCurrency(added, { compact: true, currency })} — led by ${newClients[0]}.`,
     });
   }
 

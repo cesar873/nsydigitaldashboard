@@ -8,6 +8,8 @@ import {
   formatCompact, formatLong, tickFormatterFor, type ValueKind,
 } from "./chart-shared";
 
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
+
 export type RankedDatum = { name: string; value: number };
 
 export function RankedBarChart({
@@ -15,11 +17,13 @@ export function RankedBarChart({
   format = "currency",
   color = "#1390eb",
   maxRows = 20,
+  currency = GBP_VIEW,
 }: {
   data: RankedDatum[];
   format?: ValueKind;
   color?: string;
   maxRows?: number;
+  currency?: CurrencyView;
 }) {
   const sorted = [...data]
     .filter((d) => Number.isFinite(d.value) && d.value !== 0)
@@ -44,7 +48,7 @@ export function RankedBarChart({
           tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={tickFormatterFor(format)}
+          tickFormatter={tickFormatterFor(format, currency)}
         />
         <YAxis
           type="category"
@@ -60,7 +64,7 @@ export function RankedBarChart({
           labelStyle={TOOLTIP_LABEL_STYLE}
           itemStyle={TOOLTIP_ITEM_STYLE}
           cursor={{ fill: "rgba(120,120,120,0.08)" }}
-          formatter={(value) => [formatLong(Number(value), format), "Value"]}
+          formatter={(value) => [formatLong(Number(value), format, currency), "Value"]}
         />
         <Bar
           dataKey="value"
@@ -73,7 +77,7 @@ export function RankedBarChart({
           <LabelList
             dataKey="value"
             position="right"
-            formatter={(v: unknown) => formatCompact(Number(v), format)}
+            formatter={(v: unknown) => formatCompact(Number(v), format, currency)}
             style={{ fill: "currentColor", fontSize: 11, fontWeight: 500 }}
           />
         </Bar>

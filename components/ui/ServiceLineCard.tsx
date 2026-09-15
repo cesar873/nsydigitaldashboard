@@ -1,5 +1,6 @@
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type ServiceMetric = {
   label: string;
@@ -17,17 +18,22 @@ export type ServiceLine = {
   hasData: boolean;
 };
 
-function fmt(v: number, f: ServiceMetric["format"]) {
-  if (f === "currency") return formatCurrency(v, { compact: true });
-  if (f === "percent") return formatPercent(v);
-  return formatNumber(v);
-}
-
 /**
  * TNT-style service-line card: value on the left, delta-vs-scenario badge on
  * the right. Reads as "how are we doing against the plan for this line".
  */
-export function ServiceLineCard({ line }: { line: ServiceLine }) {
+export function ServiceLineCard({
+  line,
+  currency = GBP_VIEW,
+}: {
+  line: ServiceLine;
+  currency?: CurrencyView;
+}) {
+  const fmt = (v: number, f: ServiceMetric["format"]) => {
+    if (f === "currency") return formatCurrency(v, { compact: true, currency });
+    if (f === "percent") return formatPercent(v);
+    return formatNumber(v);
+  };
   return (
     <div className="flex h-full flex-col rounded-2xl border border-border/40 bg-card/30 p-5 backdrop-blur-sm">
       <div className="mb-3 flex items-center gap-2">

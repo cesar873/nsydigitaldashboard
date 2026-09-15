@@ -3,6 +3,7 @@ import { MonthMultiSelect } from "@/components/ui/MonthMultiSelect";
 import { RangeSelect } from "@/components/ui/RangeSelect";
 import { RefreshButton } from "@/components/ui/RefreshButton";
 import { ScenarioSelect } from "@/components/ui/ScenarioSelect";
+import { CurrencyToggle } from "@/components/ui/CurrencyToggle";
 import type { Scenario } from "@/lib/sources/scenarios";
 
 /**
@@ -41,6 +42,7 @@ export function ForecastFiltersBar({
         <ScenarioSelect scenarios={scenarios} selected={selectedScenario} />
         <MonthMultiSelect options={allMonths} selected={selectedMonths} />
         <RangeSelect fromIso={fromIso} toIso={toIso} minIso={minIso} maxIso={maxIso} />
+        <CurrencyToggle />
 
         {lastActualMonthIso && (
           <div className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-border/40 bg-card/40 px-2.5 py-1.5 text-[11px] text-muted-foreground">

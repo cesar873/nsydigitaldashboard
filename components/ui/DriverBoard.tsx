@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Driver, DriverStatus, DriverView } from "@/lib/driver-types";
 import { viewDriver } from "@/lib/driver-types";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 import { formatMonthLong, formatMonthShort } from "@/lib/months";
 import { cn } from "@/lib/utils";
 
@@ -49,12 +50,18 @@ const STATUS: Record<
   },
 };
 
-function fmt(v: number, unit: Driver["unit"]) {
-  return unit === "currency" ? formatCurrency(v, { compact: true }) : formatNumber(v);
-}
-
 /** One driver for the focused month: target, live actual, and what's left to do. */
-function DriverCard({ view, elapsed }: { view: DriverView; elapsed: number }) {
+function DriverCard({
+  view,
+  elapsed,
+  currency = GBP_VIEW,
+}: {
+  view: DriverView;
+  elapsed: number;
+  currency?: CurrencyView;
+}) {
+  const fmt = (v: number, unit: Driver["unit"]) =>
+    unit === "currency" ? formatCurrency(v, { compact: true, currency }) : formatNumber(v);
   const { driver, month, status, carriedIn, requiredThisMonth, remaining } = view;
   const s = STATUS[status];
 
@@ -144,11 +151,13 @@ export function DriverBoard({
   months,
   currentMonthIso,
   elapsed,
+  currency = GBP_VIEW,
 }: {
   drivers: Driver[];
   months: string[];
   currentMonthIso: string;
   elapsed: number;
+  currency?: CurrencyView;
 }) {
   const [focus, setFocus] = useState(
     months.includes(currentMonthIso) ? currentMonthIso : (months[0] ?? ""),
@@ -222,7 +231,7 @@ export function DriverBoard({
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {views.map((v) => (
-          <DriverCard key={v.driver.key} view={v} elapsed={elapsed} />
+          <DriverCard key={v.driver.key} view={v} elapsed={elapsed} currency={currency} />
         ))}
       </div>
 

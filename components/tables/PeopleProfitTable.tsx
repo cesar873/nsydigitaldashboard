@@ -5,16 +5,17 @@ import { useMemo, useState } from "react";
 import type { TeamProfitRow } from "@/lib/sources/team-profit";
 import { MultiSelectFilter, matchesFilter } from "@/components/ui/MultiSelectFilter";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
 type SortKey = "name" | "hoursAvailable" | "revenueCovered" | "profit" | "utilizationActual" | "revenueGap";
 
-function BarCell({ value, max, color }: { value: number; max: number; color: string }) {
+function BarCell({ value, max, color, currency = GBP_VIEW }: { value: number; max: number; color: string; currency?: CurrencyView }) {
   const pct = max > 0 ? Math.min(100, (Math.abs(value) / max) * 100) : 0;
   return (
     <div className="flex items-center gap-1.5">
       <span className="w-14 text-right text-[13px] tabular-nums">
-        {value === 0 ? <span className="text-muted-foreground">—</span> : formatCurrency(value, { compact: true })}
+        {value === 0 ? <span className="text-muted-foreground">—</span> : formatCurrency(value, { compact: true, currency })}
       </span>
       <span className="h-1.5 w-16 rounded bg-muted/40">
         <span className={cn("block h-1.5 rounded", color)} style={{ width: `${pct}%` }} />
@@ -45,7 +46,13 @@ function UtilizationCell({ actual, target }: { actual: number | null; target: nu
   );
 }
 
-export function PeopleProfitTable({ rows }: { rows: TeamProfitRow[] }) {
+export function PeopleProfitTable({
+  rows,
+  currency = GBP_VIEW,
+}: {
+  rows: TeamProfitRow[];
+  currency?: CurrencyView;
+}) {
   const [query, setQuery] = useState("");
   const [departments, setDepartments] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("revenueCovered");
@@ -187,7 +194,7 @@ export function PeopleProfitTable({ rows }: { rows: TeamProfitRow[] }) {
                       {r.department || "—"}
                     </td>
                     <td className="px-3 py-2 text-[13px] tabular-nums whitespace-nowrap">
-                      {r.costPerHour === 0 ? "—" : formatCurrency(r.costPerHour)}
+                      {r.costPerHour === 0 ? "—" : formatCurrency(r.costPerHour, { currency })}
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-1.5">
@@ -207,13 +214,14 @@ export function PeopleProfitTable({ rows }: { rows: TeamProfitRow[] }) {
                       </div>
                     </td>
                     <td className="px-3 py-2">
-                      <BarCell value={r.revenueCovered} max={max.covered} color="bg-emerald-500/70" />
+                      <BarCell value={r.revenueCovered} max={max.covered} color="bg-emerald-500/70" currency={currency} />
                     </td>
                     <td className="px-3 py-2">
                       <BarCell
                         value={r.profit}
                         max={max.profit}
                         color={r.profit < 0 ? "bg-rose-500/70" : "bg-emerald-500/70"}
+                        currency={currency}
                       />
                     </td>
                     <td className="px-3 py-2">
@@ -243,6 +251,7 @@ export function PeopleProfitTable({ rows }: { rows: TeamProfitRow[] }) {
                         value={r.revenueGap}
                         max={max.gap}
                         color={r.revenueGap > 0 ? "bg-rose-500/70" : "bg-emerald-500/70"}
+                        currency={currency}
                       />
                     </td>
                   </tr>
@@ -260,15 +269,15 @@ export function PeopleProfitTable({ rows }: { rows: TeamProfitRow[] }) {
                 {formatNumber(totals.hours, 0)}
               </td>
               <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums">
-                {formatCurrency(totals.covered, { compact: true })}
+                {formatCurrency(totals.covered, { compact: true, currency })}
               </td>
               <td className="px-3 py-2.5 text-[13px] font-bold tabular-nums">
-                {formatCurrency(totals.profit, { compact: true })}
+                {formatCurrency(totals.profit, { compact: true, currency })}
               </td>
               <td className="px-3 py-2.5" />
               <td className="px-3 py-2.5" />
               <td className="px-3 py-2.5 text-[13px] font-semibold tabular-nums">
-                {formatCurrency(totals.gap, { compact: true })}
+                {formatCurrency(totals.gap, { compact: true, currency })}
               </td>
             </tr>
           </tfoot>

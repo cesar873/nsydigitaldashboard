@@ -2,6 +2,7 @@ import type { Insight } from "@/components/ui/WhatToDoNext";
 import type { Metric } from "@/lib/sources/analytics";
 import { metricBy, metricValue } from "@/lib/sources/analytics";
 import { formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export function generateWhatToDoNextAnalytics({
   metrics,
@@ -9,12 +10,14 @@ export function generateWhatToDoNextAnalytics({
   prior,
   priorLabel,
   hasPrior,
+  currency = GBP_VIEW,
 }: {
   metrics: Metric[];
   selected: string[];
   prior: string[];
   priorLabel: string;
   hasPrior: boolean;
+  currency?: CurrencyView;
 }): Insight[] {
   const out: Insight[] = [];
   const val = (key: string, months: string[]) => metricValue(metricBy(metrics, key), months);
@@ -32,7 +35,7 @@ export function generateWhatToDoNextAnalytics({
     if (ratio >= 3) {
       out.push({
         tone: "win",
-        prose: `LTV/CAC at <b>${ratio.toFixed(1)}×</b> — earning back <b>${formatCurrency(ltv, { compact: true })}</b> per <b>${formatCurrency(cac, { compact: true })}</b> of acquisition spend. The acquisition machine is paying off; this is where to press.`,
+        prose: `LTV/CAC at <b>${ratio.toFixed(1)}×</b> — earning back <b>${formatCurrency(ltv, { compact: true, currency })}</b> per <b>${formatCurrency(cac, { compact: true, currency })}</b> of acquisition spend. The acquisition machine is paying off; this is where to press.`,
       });
     } else if (ratio >= 1) {
       out.push({
@@ -104,12 +107,12 @@ export function generateWhatToDoNextAnalytics({
     if (change <= -0.1) {
       out.push({
         tone: "warn",
-        prose: `Revenue per employee fell <b>${formatPercent(Math.abs(change))}</b> vs ${priorLabel} to ${formatCurrency(rpe, { compact: true })} — headcount is growing faster than the book.`,
+        prose: `Revenue per employee fell <b>${formatPercent(Math.abs(change))}</b> vs ${priorLabel} to ${formatCurrency(rpe, { compact: true, currency })} — headcount is growing faster than the book.`,
       });
     } else if (change >= 0.1) {
       out.push({
         tone: "win",
-        prose: `Revenue per employee up <b>${formatPercent(change)}</b> vs ${priorLabel} to ${formatCurrency(rpe, { compact: true })} — the team is carrying more without more people.`,
+        prose: `Revenue per employee up <b>${formatPercent(change)}</b> vs ${priorLabel} to ${formatCurrency(rpe, { compact: true, currency })} — the team is carrying more without more people.`,
       });
     }
   }
@@ -121,7 +124,7 @@ export function generateWhatToDoNextAnalytics({
     if (change >= 0.25) {
       out.push({
         tone: "warn",
-        prose: `CAC rose <b>${formatPercent(change)}</b> vs ${priorLabel} to ${formatCurrency(cac, { compact: true })}. Watch it against LTV before scaling spend.`,
+        prose: `CAC rose <b>${formatPercent(change)}</b> vs ${priorLabel} to ${formatCurrency(cac, { compact: true, currency })}. Watch it against LTV before scaling spend.`,
       });
     }
   }

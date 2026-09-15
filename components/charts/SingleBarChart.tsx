@@ -8,6 +8,7 @@ import {
   formatCompact, formatLong, lighten, tickFormatterFor, yAxisWidthFor, type ValueKind,
 } from "./chart-shared";
 import { forecastMarkers } from "./ForecastMarkers";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 export type MonthBarDatum = { label: string; value: number; isForecast: boolean };
 
@@ -18,12 +19,14 @@ export function SingleBarChart({
   format = "currency",
   height = 280,
   name = "Value",
+  currency = GBP_VIEW,
 }: {
   data: MonthBarDatum[];
   color: string;
   format?: ValueKind;
   height?: number;
   name?: string;
+  currency?: CurrencyView;
 }) {
   const firstForecastIndex = data.findIndex((d) => d.isForecast);
   const tint = lighten(color);
@@ -44,14 +47,14 @@ export function SingleBarChart({
           tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={tickFormatterFor(format)}
+          tickFormatter={tickFormatterFor(format, currency)}
         />
         <Tooltip
           contentStyle={TOOLTIP_STYLE}
           labelStyle={TOOLTIP_LABEL_STYLE}
           itemStyle={TOOLTIP_ITEM_STYLE}
           cursor={{ fill: "rgba(120,120,120,0.08)" }}
-          formatter={(value) => [formatLong(Number(value), format), name]}
+          formatter={(value) => [formatLong(Number(value), format, currency), name]}
         />
         {forecastMarkers({ labels: data.map((d) => d.label), firstForecastIndex })}
         <Bar dataKey="value" name={name} barSize={28} radius={[4, 4, 0, 0]} isAnimationActive={false}>
@@ -66,7 +69,7 @@ export function SingleBarChart({
             dataKey="value"
             position="top"
             offset={8}
-            formatter={(v: unknown) => (Number(v) === 0 ? "" : formatCompact(Number(v), format))}
+            formatter={(v: unknown) => (Number(v) === 0 ? "" : formatCompact(Number(v), format, currency))}
             fontSize={10}
             fontWeight={600}
             fill="currentColor"
@@ -85,7 +88,7 @@ export function SingleBarChart({
                   fontSize={10}
                   fontWeight={600}
                 >
-                  {formatCompact(value, format)}
+                  {formatCompact(value, format, currency)}
                 </text>
               );
             }}

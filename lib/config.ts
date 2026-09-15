@@ -32,3 +32,17 @@ export const TABS = {
 /** Phase 2 = forecast months visible across every tab. */
 export const PHASE = 2 as 1 | 2 | 3;
 export const FORECAST_LOOKAHEAD_MONTHS = 3;
+
+/**
+ * Currency. The sheet's figures are the base currency (GBP) and are exact.
+ * The USD view is a convenience conversion at a single fixed rate — change
+ * `usdPerGbp` here to update it everywhere. Add more entries to offer more
+ * views; `base` must stay the currency the sheet is actually denominated in.
+ */
+export const CURRENCY = {
+  base: "GBP" as const,
+  baseSymbol: "£",
+  /** Fixed GBP→USD rate for the USD view. */
+  usdPerGbp: 1.28,
+  usdSymbol: "$",
+};

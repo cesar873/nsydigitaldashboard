@@ -9,6 +9,7 @@ import type { Invoice } from "@/lib/sources/invoices";
 import type { BookkeepingRow } from "@/lib/sources/bookkeeping";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 function StatusBadge({ status }: { status: string }) {
   const lower = status.toLowerCase();
@@ -33,7 +34,7 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function Amount({ value }: { value: number | null }) {
+function Amount({ value, currency = GBP_VIEW }: { value: number | null; currency?: CurrencyView }) {
   if (value === null) {
     return (
       <span
@@ -44,7 +45,7 @@ function Amount({ value }: { value: number | null }) {
       </span>
     );
   }
-  return <span className="text-[13px] tabular-nums">{formatCurrency(value, { compact: true })}</span>;
+  return <span className="text-[13px] tabular-nums">{formatCurrency(value, { compact: true, currency })}</span>;
 }
 
 /**
@@ -56,10 +57,12 @@ export function PipelinePanel({
   pipeline,
   bookkeeping,
   categoryOptions,
+  currency = GBP_VIEW,
 }: {
   pipeline: Invoice[];
   bookkeeping: BookkeepingRow[];
   categoryOptions: string[];
+  currency?: CurrencyView;
 }) {
   const [tab, setTab] = useState<"invoices" | "transactions">("invoices");
   const [writeError, setWriteError] = useState<string | null>(null);
@@ -122,7 +125,7 @@ export function PipelinePanel({
               </div>
             </div>
             <span className="text-[13px] font-semibold tabular-nums">
-              {formatCurrency(pipelineTotal, { compact: true })}
+              {formatCurrency(pipelineTotal, { compact: true, currency })}
             </span>
           </div>
 
@@ -162,7 +165,7 @@ export function PipelinePanel({
                     </td>
                     <td className="px-4 py-2 text-[12px] text-muted-foreground">{inv.service || "—"}</td>
                     <td className="px-4 py-2 text-right">
-                      <Amount value={inv.amount} />
+                      <Amount value={inv.amount} currency={currency} />
                     </td>
                     <td className="px-4 py-2">
                       <StatusBadge status={inv.status} />
@@ -185,7 +188,7 @@ export function PipelinePanel({
               </div>
             </div>
             <span className="text-[13px] font-semibold tabular-nums">
-              {formatCurrency(openTotal, { compact: true })}
+              {formatCurrency(openTotal, { compact: true, currency })}
             </span>
           </div>
 
@@ -239,7 +242,7 @@ export function PipelinePanel({
                         row.amount < 0 && "text-rose-300",
                       )}
                     >
-                      {formatCurrency(row.amount, { compact: true })}
+                      {formatCurrency(row.amount, { compact: true, currency })}
                     </td>
                     <td className="px-3 py-2 align-top">
                       <CategoryPicker
@@ -270,8 +273,10 @@ export function PipelinePanel({
 /** Right-hand panel: what has been sent and is still owed. */
 export function OutstandingPanel({
   outstanding,
+  currency = GBP_VIEW,
 }: {
   outstanding: { invoice: Invoice; owed: number; days: number | null }[];
+  currency?: CurrencyView;
 }) {
   const total = outstanding.reduce((a, o) => a + o.owed, 0);
   const unpaid = outstanding.filter((o) => /unpaid/i.test(o.invoice.status));
@@ -293,12 +298,12 @@ export function OutstandingPanel({
         Outstanding invoices
       </div>
       <div className="anton mt-1 text-[26px] leading-none tracking-[0.5px] tabular-nums">
-        {formatCurrency(total, { compact: true })}
+        {formatCurrency(total, { compact: true, currency })}
       </div>
       <div className="mt-1 text-[11px] text-muted-foreground">
         {outstanding.length} sent, not yet collected
         {overdueTotal > 0 && (
-          <span className="text-rose-300"> · {formatCurrency(overdueTotal, { compact: true })} overdue</span>
+          <span className="text-rose-300"> · {formatCurrency(overdueTotal, { compact: true, currency })} overdue</span>
         )}
       </div>
 
@@ -325,14 +330,14 @@ export function OutstandingPanel({
                 contentStyle={TOOLTIP_STYLE}
                 labelStyle={TOOLTIP_LABEL_STYLE}
                 itemStyle={TOOLTIP_ITEM_STYLE}
-                formatter={(v, n) => [formatCurrency(Number(v), { compact: true }), n]}
+                formatter={(v, n) => [formatCurrency(Number(v), { compact: true, currency }), n]}
               />
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground">Open</span>
             <span className="anton text-[17px] leading-none tabular-nums">
-              {formatCurrency(total, { compact: true })}
+              {formatCurrency(total, { compact: true, currency })}
             </span>
           </div>
         </div>
@@ -348,7 +353,7 @@ export function OutstandingPanel({
                 {d.name} <span className="text-muted-foreground/70">({d.count})</span>
               </span>
               <span className="ml-auto font-semibold tabular-nums">
-                {formatCurrency(d.value, { compact: true })}
+                {formatCurrency(d.value, { compact: true, currency })}
               </span>
               <span className="w-9 text-right text-[10px] tabular-nums text-muted-foreground">
                 {total > 0 ? `${Math.round((d.value / total) * 100)}%` : "—"}
@@ -399,7 +404,7 @@ export function OutstandingPanel({
                         <span className="block max-w-[110px] truncate">{invoice.service || "—"}</span>
                       </td>
                       <td className="px-2 py-1.5 text-right text-[13px] tabular-nums">
-                        {formatCurrency(owed, { compact: true })}
+                        {formatCurrency(owed, { compact: true, currency })}
                       </td>
                       <td className="whitespace-nowrap px-2 py-1.5 text-right text-[12px] text-muted-foreground">
                         {invoice.dueDate || "—"}

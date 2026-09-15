@@ -4,6 +4,7 @@ import type { Driver, DriverMonth } from "@/lib/driver-types";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import { formatMonthShort } from "@/lib/months";
 import { cn } from "@/lib/utils";
+import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
 
 /**
  * Targets by month. Each cell shows the actual against its target as a filled
@@ -14,13 +15,15 @@ export function DriverTable({
   drivers,
   months,
   currentMonthIso,
+  currency = GBP_VIEW,
 }: {
   drivers: Driver[];
   months: string[];
   currentMonthIso: string;
+  currency?: CurrencyView;
 }) {
   const fmt = (v: number, unit: Driver["unit"]) =>
-    unit === "currency" ? formatCurrency(v, { compact: true }) : formatNumber(v);
+    unit === "currency" ? formatCurrency(v, { compact: true, currency }) : formatNumber(v);
 
   /** Did this month meet its target? Inverse drivers want actual <= target. */
   function verdict(driver: Driver, m: DriverMonth): "hit" | "miss" | "none" {
