@@ -118,14 +118,24 @@ export async function readSummary(tabName: string): Promise<IncomeSummary> {
     const key = label.toLowerCase();
     const existing = rows.get(key);
     if (existing) {
-      // The sheet repeats this label; the sheet's own totals include both
-      // lines, so summing is what reconciles. Reported, not silently merged.
-      for (const m of months) {
-        existing.byMonth.set(m, (existing.byMonth.get(m) ?? 0) + (values.get(m) ?? 0));
-      }
-      if (!existing.duplicated) {
-        existing.duplicated = true;
-        duplicateLabels.push(label);
+      // A row repeated with *identical* values is an echo — the same figure
+      // shown in two blocks (e.g. "Total Cash" in the Balance Sheet Summary and
+      // again as "TOTAL CASH" in the ASSETS list). A balance is not additive, so
+      // summing those double-counts it. Only genuinely different duplicate lines
+      // — which the sheet's own totals expect to be added — are summed.
+      const isEcho = months.every(
+        (m) => (existing.byMonth.get(m) ?? 0) === (values.get(m) ?? 0),
+      );
+      if (!isEcho) {
+        // The sheet repeats this label with different values; summing is what
+        // reconciles. Reported, not silently merged.
+        for (const m of months) {
+          existing.byMonth.set(m, (existing.byMonth.get(m) ?? 0) + (values.get(m) ?? 0));
+        }
+        if (!existing.duplicated) {
+          existing.duplicated = true;
+          duplicateLabels.push(label);
+        }
       }
       continue;
     }
