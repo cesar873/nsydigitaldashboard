@@ -11,18 +11,11 @@ import { WhatToDoNext } from "@/components/ui/WhatToDoNext";
 import { resolveRange, type SearchParams } from "@/lib/default-range";
 import { formatMonthShort, periodLabel } from "@/lib/months";
 import { formatCurrency, formatPercent } from "@/lib/utils";
-import { generateWhatToDoNextExpenses } from "@/lib/insights/expenses";
+import { generateWhatToDoNextExpensesFromModel } from "@/lib/insights/expenses";
 import { getIncomeSummary, seriesFor, sumMonths } from "@/lib/sources/income-summary";
 import { getLastActualMonth } from "@/lib/sources/stats";
 import { expenseCategories } from "@/lib/sources/expense-categories";
-import {
-  costByCategory,
-  costByVendor,
-  expenseRows,
-  getTransactions,
-  monthlyByCategory,
-  totalCost,
-} from "@/lib/sources/transactions";
+import { expenseRows, getTransactions, type Transaction } from "@/lib/sources/transactions";
 
 export const revalidate = 300;
 export const metadata = { title: "Expenses · Finance Dashboard" };
@@ -34,33 +27,50 @@ export default async function ExpensesPage({
 }) {
   const sp = await searchParams;
 
-  let tx, summary, lastActual;
+  // The page is driven by the Finance Model P&L, so its cost figures always tie
+  // to the statement. The raw Transactions ledger is optional — it only powers
+  // the vendor-level detail table, and only when it carries classified expense
+  // rows (an Account Type column). A Xero-style bank export without that column
+  // simply hides that one section rather than breaking the page.
+  let summary, lastActual;
   try {
-    [tx, summary, lastActual] = await Promise.all([
-      getTransactions(),
+    [summary, lastActual] = await Promise.all([
       getIncomeSummary(),
       getLastActualMonth(),
     ]);
   } catch (err) {
-    return <SheetError error={err} tab="Transactions" />;
+    return <SheetError error={err} tab="Finance Model" />;
   }
 
-  const rows = expenseRows(tx);
-  const txMonths = [...new Set(rows.map((r) => r.monthIso).filter((m): m is string => !!m))].sort();
-
-  if (txMonths.length === 0) {
+  const modelCategories = expenseCategories(summary);
+  if (modelCategories.length === 0) {
     return (
       <SheetError
-        error={new Error("No dated expense rows found in the Transactions tab. Check the tab name in lib/config.ts.")}
-        tab="Transactions"
+        error={
+          new Error(
+            "No cost lines found in the Finance Model P&L (Cost of Sales / Operating Expenses).",
+          )
+        }
+        tab="Finance Model"
       />
     );
   }
 
-  // The range spans the Finance Model's months (which include forecast) unioned
-  // with the ledger's, so the year view isn't truncated by the last transaction.
-  // Ledger-sourced tables simply show "—" for months with no transactions.
-  const dataMonths = [...new Set([...txMonths, ...summary.months])].sort();
+  // Optional ledger detail. Never fatal to the page.
+  let ledgerRows: Transaction[] = [];
+  try {
+    ledgerRows = expenseRows(await getTransactions());
+  } catch {
+    ledgerRows = [];
+  }
+  const hasLedgerDetail = ledgerRows.length > 0;
+
+  const txMonths = [
+    ...new Set(ledgerRows.map((r) => r.monthIso).filter((m): m is string => !!m)),
+  ];
+  // The range spans the Finance Model's months (which include forecast), unioned
+  // with any ledger months so nothing is truncated.
+  const dataMonths = [...new Set([...summary.months, ...txMonths])].sort();
 
   const range = resolveRange({
     searchParams: sp,
@@ -71,21 +81,26 @@ export default async function ExpensesPage({
   const revenueSeries = seriesFor(summary, /^total revenue$/i);
   const revenue = sumMonths(revenueSeries, range.selectedMonths);
 
-  const cur = totalCost(rows, range.selectedMonths);
+  // ── Totals, straight from the Finance Model cost lines ──────────────────────
+  const sumCats = (cats: typeof modelCategories, months: string[]) =>
+    cats.reduce(
+      (acc, c) => acc + months.reduce((s, m) => s + (c.byMonth.get(m) ?? 0), 0),
+      0,
+    );
+
+  const cur = sumCats(modelCategories, range.selectedMonths);
   const hasPrior = range.priorMonths.every((m) => dataMonths.includes(m));
-  const prior = hasPrior ? totalCost(rows, range.priorMonths) : 0;
+  const prior = hasPrior ? sumCats(modelCategories, range.priorMonths) : 0;
   const priorLabel = hasPrior ? periodLabel(range.priorMonths) : "no prior period";
   const deltaLabel = hasPrior ? `vs ${priorLabel}` : "no prior period";
 
-  const categories = costByCategory(rows, range.selectedMonths);
-  const vendors = costByVendor(rows, range.selectedMonths);
-  const priorVendors = new Map(
-    hasPrior ? costByVendor(rows, range.priorMonths).map((v) => [v.name, v.value]) : [],
-  );
+  const cogsCats = modelCategories.filter((c) => c.group === "Cost of sales");
+  const opexCats = modelCategories.filter((c) => c.group !== "Cost of sales");
+  const cogsCur = sumCats(cogsCats, range.selectedMonths);
+  const opexCur = sumCats(opexCats, range.selectedMonths);
 
-  // Stacked bars read the Finance Model, not the ledger, so forecast months
-  // are populated — the ledger only ever holds actuals.
-  const modelCategories = expenseCategories(summary);
+  // Stacked bars + category table read the Finance Model, so forecast months are
+  // populated (the ledger only ever holds actuals).
   const stackKeys = modelCategories.map((c) => c.label);
   const stackRows = range.rangeMonths.map((m) => {
     const row: Record<string, string | number> = { label: formatMonthShort(m) };
@@ -111,19 +126,24 @@ export default async function ExpensesPage({
     byMonth: c.byMonth,
   }));
 
-  // All costs: one row per vendor × category, from the transaction ledger.
-  const vendorMap = new Map<string, { vendor: string; category: string; byMonth: Map<string, number> }>();
-  for (const t of rows) {
-    if (!t.monthIso) continue;
-    const vendor = t.contact || "Unknown vendor";
-    const category = t.summaryCategory || t.account || "Uncategorized";
-    const key = `${vendor}::${category}`;
-    let entry = vendorMap.get(key);
-    if (!entry) {
-      entry = { vendor, category, byMonth: new Map() };
-      vendorMap.set(key, entry);
+  // ── Optional: vendor × category detail from the classified ledger ───────────
+  const vendorMap = new Map<
+    string,
+    { vendor: string; category: string; byMonth: Map<string, number> }
+  >();
+  if (hasLedgerDetail) {
+    for (const t of ledgerRows) {
+      if (!t.monthIso) continue;
+      const vendor = t.contact || "Unknown vendor";
+      const category = t.summaryCategory || t.account || "Uncategorized";
+      const key = `${vendor}::${category}`;
+      let entry = vendorMap.get(key);
+      if (!entry) {
+        entry = { vendor, category, byMonth: new Map() };
+        vendorMap.set(key, entry);
+      }
+      entry.byMonth.set(t.monthIso, (entry.byMonth.get(t.monthIso) ?? 0) + t.net);
     }
-    entry.byMonth.set(t.monthIso, (entry.byMonth.get(t.monthIso) ?? 0) + t.net);
   }
   const allCostRows: MatrixRow[] = [...vendorMap.entries()].map(([key, v]) => ({
     key,
@@ -131,9 +151,6 @@ export default async function ExpensesPage({
     secondary: v.category,
     byMonth: v.byMonth,
   }));
-
-  // The ledger holds only what has actually happened, so its columns stop at
-  // the last actual month rather than running into the forecast.
   const actualColumns = tableColumns.filter((c) => !c.isForecast);
 
   const costRatio = revenue > 0 ? cur / revenue : null;
@@ -141,6 +158,8 @@ export default async function ExpensesPage({
     costRatio === null ? "neutral" : costRatio <= 0.5 ? "success" : costRatio <= 0.7 ? "warning" : "danger";
 
   const delta = (a: number, b: number) => (b === 0 ? null : (a - b) / Math.abs(b));
+
+  const sources = hasLedgerDetail ? "Transactions + Finance Model" : "Finance Model";
 
   return (
     <>
@@ -159,13 +178,13 @@ export default async function ExpensesPage({
           eyebrow="Costs"
           title="Expenses"
           period={range.periodLabel}
-          source="Transactions + Finance Model"
+          source={sources}
         />
 
         <WhatToDoNext
           periodLabel={range.periodLabel}
-          insights={generateWhatToDoNextExpenses(
-            rows,
+          insights={generateWhatToDoNextExpensesFromModel(
+            modelCategories,
             range.selectedMonths,
             hasPrior ? range.priorMonths : [],
             priorLabel,
@@ -187,21 +206,14 @@ export default async function ExpensesPage({
             tone={ratioTone}
           />
           <KpiStat
-            label="Active Vendors"
-            value={String(vendors.length)}
-            delta={hasPrior ? delta(vendors.length, priorVendors.size) : null}
-            deltaLabel={deltaLabel}
+            label="Cost of Sales"
+            value={formatCurrency(cogsCur, { compact: true })}
           />
           <KpiStat
-            label="Categories"
-            value={String(categories.length)}
+            label="Operating Expenses"
+            value={formatCurrency(opexCur, { compact: true })}
           />
-          <KpiStat
-            label="Avg / Vendor"
-            value={
-              vendors.length > 0 ? formatCurrency(cur / vendors.length, { compact: true }) : "—"
-            }
-          />
+          <KpiStat label="Categories" value={String(modelCategories.length)} />
         </section>
 
         <section className="mt-8">
@@ -243,28 +255,30 @@ export default async function ExpensesPage({
           />
         </section>
 
-        <section className="mt-8">
-          <div className="mb-3 flex items-baseline justify-between gap-4">
-            <h2 className="text-base font-semibold">Actual transactions</h2>
-            <span className="text-[11px] text-muted-foreground">
-              Every vendor × category from the ledger · actuals only, no forecast ·
-              green is money back
-            </span>
-          </div>
-          <MonthMatrixTable
-            rows={allCostRows}
-            columns={actualColumns}
-            primaryLabel="Vendor / person"
-            secondaryLabel="Category"
-            searchPlaceholder="Search vendor / person…"
-            filterLabel="Category"
-            accent="rose"
-            shareLabel="% of total"
-            signedValues
-          />
-        </section>
+        {hasLedgerDetail && (
+          <section className="mt-8">
+            <div className="mb-3 flex items-baseline justify-between gap-4">
+              <h2 className="text-base font-semibold">Actual transactions</h2>
+              <span className="text-[11px] text-muted-foreground">
+                Every vendor × category from the ledger · actuals only, no forecast ·
+                green is money back
+              </span>
+            </div>
+            <MonthMatrixTable
+              rows={allCostRows}
+              columns={actualColumns}
+              primaryLabel="Vendor / person"
+              secondaryLabel="Category"
+              searchPlaceholder="Search vendor / person…"
+              filterLabel="Category"
+              accent="rose"
+              shareLabel="% of total"
+              signedValues
+            />
+          </section>
+        )}
 
-        <LiveFooter sources="Transactions + Finance Model" />
+        <LiveFooter sources={sources} />
       </div>
     </>
   );
