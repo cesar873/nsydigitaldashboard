@@ -132,7 +132,7 @@ export function PlanVsActualChart({
             { value: planName, type: "circle" as const, color: PLAN },
             { value: actualName, type: "circle" as const, color: ACTUAL },
             ...(firstForecastIndex >= 0
-              ? [{ value: `${actualName} (Services)`, type: "circle" as const, color: actualTint }]
+              ? [{ value: "Forecast", type: "circle" as const, color: actualTint }]
               : []),
           ]}
         />
@@ -172,7 +172,7 @@ export function PlanVsActualChart({
         {firstForecastIndex >= 0 && (
           <Area
             dataKey="actualFc"
-            name={`${actualName} (Services)`}
+            name="Forecast"
             legendType="none"
             type="monotone"
             stroke={actualTint}
