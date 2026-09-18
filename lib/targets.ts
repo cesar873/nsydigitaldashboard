@@ -85,17 +85,6 @@ function phaseOf(monthIso: string, currentMonthIso: string): DriverMonth["phase"
   return "upcoming";
 }
 
-/** Live revenue: what the roster is contracted to bill that month. */
-function liveRevenue(services: ClientRevenue, months: string[]): Map<string, number> {
-  const out = new Map<string, number>();
-  for (const m of months) {
-    let total = 0;
-    for (const row of services.rows) total += row.byMonth.get(m) ?? 0;
-    out.set(m, total);
-  }
-  return out;
-}
-
 function seriesOf(summary: IncomeSummary, label: string, months: string[]): Map<string, number> {
   const row = rowFor(summary, label);
   return new Map(months.map((m) => [m, row?.byMonth.get(m) ?? 0]));
@@ -155,8 +144,11 @@ export function buildDrivers({
       "Total revenue",
       "currency",
       seriesOf(plan, "TOTAL REVENUE", months),
-      liveRevenue(services, months),
-      { carries: true, onBoard: true, sourceNote: "live from Services" },
+      // Accrual: the Finance Model carries deferred income the Services roster
+      // never sees, so revenue actuals read the model, not the live book — this
+      // also keeps Total revenue reconciled with the scorecard and the plan.
+      seriesOf(actuals, "TOTAL REVENUE", months),
+      { carries: true, onBoard: true, sourceNote: "from Finance Model" },
     ),
     // Services cannot produce a profit figure, so this one reads the model.
     build(
