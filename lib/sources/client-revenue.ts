@@ -29,9 +29,10 @@ export type ClientRevenue = {
 export async function getClientRevenue(): Promise<ClientRevenue> {
   const grid = await readTab(TABS.services);
 
-  // Header is the first row containing a "Client" column.
+  // Header is the first row with a client column — named either "Client" or
+  // "Client Name" depending on the sheet's template version.
   const headerIdx = grid.findIndex((row) =>
-    row.some((c) => /^client$/i.test((c ?? "").trim())),
+    row.some((c) => /^client(\s*name)?$/i.test((c ?? "").trim())),
   );
   if (headerIdx === -1) return { rows: [], months: [] };
 
@@ -44,7 +45,7 @@ export async function getClientRevenue(): Promise<ClientRevenue> {
   });
 
   const ci = {
-    client: col(map, "client"),
+    client: col(map, "client", "client name"),
     id: col(map, "id"),
     status: col(map, "status"),
     service: col(map, "service"),
