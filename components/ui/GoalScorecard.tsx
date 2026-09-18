@@ -1,30 +1,44 @@
 "use client";
 
 import * as HoverCard from "@radix-ui/react-hover-card";
-import { AlertCircle, Check, Minus } from "lucide-react";
+import { AlertCircle, AlertTriangle, Check, Minus } from "lucide-react";
 import type { GoalProgress, GoalStatus } from "@/lib/planning";
 import { cn, formatCurrency, formatNumber, formatPercent } from "@/lib/utils";
 import { GBP_VIEW, type CurrencyView } from "@/lib/currency";
+
+/** Four-colour status: ahead / on-plan / behind-but-recoverable / off-track. */
+type DisplayStatus = GoalStatus | "at-risk";
 
 /**
  * One hue per status, in two tones: the solid tone is what is banked, the pale
  * tone is what the current book already covers. A card never mixes hues — a
  * green card gets a green run-rate segment, not a blue one.
+ *
+ * green = ahead of plan · blue = on plan (±2%) · amber = behind to date but the
+ * run rate still lands the year · red = behind and projected to miss.
  */
 const STATUS: Record<
-  GoalStatus,
+  DisplayStatus,
   { label: string; chip: string; solid: string; pale: string; text: string; Icon: typeof Check }
 > = {
   behind: {
-    label: "Behind",
+    label: "Off track",
     chip: "bg-rose-500/15 text-rose-300",
     solid: "bg-rose-500",
     pale: "bg-rose-500/30",
     text: "text-rose-300",
     Icon: AlertCircle,
   },
+  "at-risk": {
+    label: "At risk",
+    chip: "bg-amber-500/15 text-amber-300",
+    solid: "bg-amber-500",
+    pale: "bg-amber-500/30",
+    text: "text-amber-300",
+    Icon: AlertTriangle,
+  },
   on: {
-    label: "On track",
+    label: "On plan",
     chip: "bg-sky-500/15 text-sky-300",
     solid: "bg-sky-500",
     pale: "bg-sky-500/30",
@@ -86,7 +100,12 @@ export function GoalScorecard({
     fyPlanned, fyRunRate, difference, toGo, status,
   } = goal;
 
-  const st = STATUS[status];
+  // Split "behind" into amber (recoverable) vs red (off track): amber when the
+  // full-year run rate still lands within 2% of plan, red when it projects a miss.
+  const shortfallPct = fyPlanned !== 0 ? difference / Math.abs(fyPlanned) : 0;
+  const displayStatus: DisplayStatus =
+    status === "behind" ? (shortfallPct >= -0.02 ? "at-risk" : "behind") : status;
+  const st = STATUS[displayStatus];
   const denom = fyPlanned || 1;
   const banked = Math.max(0, Math.min(100, (ytdActual / denom) * 100));
   const booked = Math.max(0, Math.min(100 - banked, (contracted / denom) * 100));

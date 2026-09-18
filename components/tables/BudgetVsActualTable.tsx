@@ -140,6 +140,24 @@ export function BudgetVsActualTable({
     visibleRows.push(row);
   }
 
+  // Direction per row for colour coding: revenue and profit/margin lines read
+  // "up is good"; cost and expense sections read "down is good", so spend under
+  // budget colours green rather than red. Detail lines inherit their section.
+  const positiveByLabel = new Map<string, boolean>();
+  {
+    let sectionGood = true;
+    for (const row of visibleRows) {
+      if (row.kind === "section") {
+        sectionGood = !/(cost|expense)/i.test(row.label);
+        positiveByLabel.set(row.label, sectionGood);
+      } else if (row.kind === "total" || row.kind === "margin") {
+        positiveByLabel.set(row.label, true); // gross/operating/net profit + margins
+      } else {
+        positiveByLabel.set(row.label, sectionGood);
+      }
+    }
+  }
+
   const fmt = (v: number, kind: BvaKind) =>
     kind === "margin" ? formatPercent(v, 1) : formatCurrency(v, { compact: true, currency });
 
@@ -150,6 +168,7 @@ export function BudgetVsActualTable({
     kind,
     colActive,
     emphasis,
+    positiveIsGood = true,
     isYear = false,
   }: {
     cell: BvaCell | undefined;
@@ -158,6 +177,7 @@ export function BudgetVsActualTable({
     kind: BvaKind;
     colActive: boolean;
     emphasis: boolean;
+    positiveIsGood?: boolean;
     isYear?: boolean;
   }) {
     const onEnter = () => {
@@ -231,6 +251,24 @@ export function BudgetVsActualTable({
     const diff = cell.actual - base;
     const pct = !isMargin && base !== 0 ? cell.actual / base : null;
 
+    // Shared 4-colour tone for the % and $ columns:
+    //   blue = on plan (within 2%, or 1pp for margins) · green = ahead in the
+    //   good direction · red = behind in a closed month · amber = behind but the
+    //   month is still open/forecast (recoverable). Direction respects cost rows.
+    const hasData = !(base === 0 && cell.actual === 0);
+    const deadband = isMargin ? 0.01 : Math.abs(base) * 0.02;
+    const onPlan = Math.abs(diff) <= deadband;
+    const favorable = positiveIsGood ? diff > 0 : diff < 0;
+    const tone = !hasData
+      ? "text-muted-foreground/40"
+      : onPlan
+        ? "text-sky-300"
+        : favorable
+          ? "text-emerald-300"
+          : forecast
+            ? "text-amber-300"
+            : "text-rose-300";
+
     return (
       <>
         <td
@@ -268,13 +306,7 @@ export function BudgetVsActualTable({
             "px-2.5 py-2 text-right text-[13px] tabular-nums",
             isYear && "sticky-bg",
             bg,
-            pct === null
-              ? "text-muted-foreground/40"
-              : pct >= 1
-                ? "text-emerald-300"
-                : pct >= 0.95
-                  ? "text-amber-300"
-                  : "text-rose-300",
+            tone,
             forecast && "italic",
           )}
         >
@@ -287,11 +319,7 @@ export function BudgetVsActualTable({
             edge,
             isYear && "sticky-bg",
             bg,
-            diff === 0
-              ? "text-muted-foreground/40"
-              : diff > 0
-                ? "text-emerald-300"
-                : "text-rose-300",
+            tone,
             forecast && "italic",
           )}
         >
@@ -520,6 +548,7 @@ export function BudgetVsActualTable({
                         kind={row.kind}
                         colActive={lockedPeriod === p.key || hoverPeriod === p.key}
                         emphasis={emphasis}
+                        positiveIsGood={positiveByLabel.get(row.label) ?? true}
                       />
                     ))}
 
@@ -530,6 +559,7 @@ export function BudgetVsActualTable({
                       kind={row.kind}
                       colActive={false}
                       emphasis={emphasis}
+                      positiveIsGood={positiveByLabel.get(row.label) ?? true}
                       isYear
                     />
                   </tr>
