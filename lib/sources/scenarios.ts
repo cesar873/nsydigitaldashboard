@@ -10,11 +10,22 @@ const SCENARIO_PATTERN = /^finance\s+(plan|scenario|budget|target)/i;
 
 export type Scenario = { tab: string; label: string };
 
+/**
+ * A short picker label. A parenthetical case wins — "Finance Plan (Base)" reads
+ * as "Base", "Finance Plan (Optimistic)" as "Optimistic". Otherwise just drop
+ * the "Finance " prefix, so "Finance Scenario B" stays "Scenario B".
+ */
+function scenarioLabel(tab: string): string {
+  const paren = tab.match(/\(([^)]+)\)\s*$/);
+  if (paren) return paren[1].trim();
+  return tab.replace(/^finance\s+/i, "").trim();
+}
+
 export async function listScenarios(): Promise<Scenario[]> {
   const tabs = await listTabNames();
   const found = tabs
     .filter((t) => t !== TABS.financeModel && SCENARIO_PATTERN.test(t))
-    .map((tab) => ({ tab, label: tab.replace(/^finance\s+/i, "") }));
+    .map((tab) => ({ tab, label: scenarioLabel(tab) }));
 
   // Always offer the canonical plan tab, even if it were renamed out of pattern.
   if (found.length === 0 && tabs.includes(TABS.financePlan)) {
