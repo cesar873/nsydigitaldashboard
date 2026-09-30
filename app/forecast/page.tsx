@@ -415,7 +415,12 @@ export default async function ForecastPage({
             {revenueSeries.length === 0 ? (
               <EmptyChart message="No months in the selected range." />
             ) : (
-              <PlanVsActualChart data={revenueSeries} height={380} currency={currency} />
+              <PlanVsActualChart
+                data={revenueSeries}
+                height={380}
+                currency={currency}
+                planName={scenario.label}
+              />
             )}
           </CardShell>
         </section>
