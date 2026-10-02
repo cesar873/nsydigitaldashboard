@@ -113,12 +113,15 @@ export default async function AnalyticsPage({
   const ltvCacRows = chartRows(["ltv", "cac"]);
   const churnRows = chartRows(["churn", "churnMrr"]);
 
+  // Client counts are whole numbers. Forecast months come from the model's
+  // growth/churn formulas and land fractional (e.g. 42.627), so round for
+  // display — you can't have 0.6 of a client.
   const signedLost = range.rangeMonths.map((m) => ({
     label: formatMonthShort(m),
     monthIso: m,
-    signed: metricBy(metrics, "clientsSigned")?.byMonth.get(m) ?? 0,
-    lost: metricBy(metrics, "clientsLost")?.byMonth.get(m) ?? 0,
-    total: metricBy(metrics, "totalClients")?.byMonth.get(m) ?? 0,
+    signed: Math.round(metricBy(metrics, "clientsSigned")?.byMonth.get(m) ?? 0),
+    lost: Math.round(metricBy(metrics, "clientsLost")?.byMonth.get(m) ?? 0),
+    total: Math.round(metricBy(metrics, "totalClients")?.byMonth.get(m) ?? 0),
     isForecast: isForecast(m),
   }));
 
