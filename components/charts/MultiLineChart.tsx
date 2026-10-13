@@ -30,6 +30,7 @@ export function MultiLineChart({
   rightFormat = "number",
   firstForecastIndex = -1,
   currency = GBP_VIEW,
+  leftDomain,
 }: {
   data: Record<string, string | number>[];
   series: LineSeries[];
@@ -38,6 +39,8 @@ export function MultiLineChart({
   rightFormat?: ValueKind;
   firstForecastIndex?: number;
   currency?: CurrencyView;
+  /** Fixed left-axis range, e.g. [0, 1] to pin a percent axis at 0–100%. */
+  leftDomain?: [number, number];
 }) {
   const hasRight = series.some((s) => s.axis === "right");
   const labels = data.map((d) => String(d.label));
@@ -60,6 +63,7 @@ export function MultiLineChart({
         <YAxis
           yAxisId="left"
           width={yAxisWidthFor(leftFormat)}
+          domain={leftDomain}
           tick={{ fontSize: 10, fill: "currentColor" }}
           axisLine={false}
           tickLine={false}

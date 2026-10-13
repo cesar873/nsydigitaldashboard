@@ -404,6 +404,7 @@ export default async function FinancialsPage({
               <MultiLineChart
                 data={marginTrend}
                 leftFormat="percent"
+                leftDomain={[0, 1]}
                 firstForecastIndex={range.firstForecastIndex}
                 series={[
                   {
@@ -411,12 +412,14 @@ export default async function FinancialsPage({
                     name: "Gross Margin",
                     color: "#1390eb",
                     format: "percent",
+                    labelPosition: "top",
                   },
                   {
                     key: "operatingMargin",
                     name: "Operating Margin",
                     color: "#22c55e",
                     format: "percent",
+                    labelPosition: "bottom",
                   },
                 ]}
               />
