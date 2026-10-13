@@ -41,7 +41,9 @@ export async function getTransactions(): Promise<Transactions> {
     account: col(map, "account"),
     contact: col(map, "contact"),
     description: col(map, "description"),
-    net: col(map, "net (usd)", "net", "amount"),
+    // GBP is the base currency, and this sheet's Net (USD) column is #N/A, so
+    // read the GBP net first and fall back to the older column names.
+    net: col(map, "net (gbp)", "net (usd)", "net", "amount"),
     summary: col(map, "summary category"),
     check: col(map, "check"),
   };
